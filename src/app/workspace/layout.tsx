@@ -1,6 +1,5 @@
 /**
- * Organization workspace shell — WP-06.
- * Requires authenticated org_user.
+ * Organization workspace shell — WP-06 + profile.
  */
 
 import Link from "next/link";
@@ -20,9 +19,15 @@ export default async function WorkspaceLayout({
     <div className="min-h-screen bg-surface">
       <header className="border-b border-border bg-surface-elevated">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <Link href="/workspace" className="font-semibold text-primary">
               Org workspace
+            </Link>
+            <Link
+              href="/workspace/profile"
+              className="text-sm text-muted-foreground hover:text-primary"
+            >
+              Profile
             </Link>
             <Link href="/" className="text-sm text-muted-foreground hover:text-primary">
               Public site
