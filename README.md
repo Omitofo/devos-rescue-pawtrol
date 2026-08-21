@@ -8,12 +8,12 @@ Built from the DevOS Master Design Plan (`Omitofo/DevOS` → `projects/rescue-pa
 
 | Work Package | Description | Status |
 |--------------|-------------|--------|
-| **WP-01** | Project foundation & shared infrastructure | ✅ Complete |
+| **WP-01** | Project foundation & shared infrastructure | ✅ Complete (Next.js 16.3 Active LTS) |
 | WP-02 … WP-18 | See `implementation.md` in the DevOS project folder | Pending |
 
 ## Stack (locked by architecture)
 
-- **Next.js 15** (App Router, hybrid SSR/CSR)
+- **Next.js 16** (App Router, hybrid SSR/CSR) — Active LTS
 - **TypeScript** (strict)
 - **Tailwind CSS** + design-token plumbing (CSS variables)
 - **Supabase** (PostgreSQL + Auth + Storage + RLS) — sole primary backend
@@ -60,6 +60,10 @@ See `.env.example`. Critical rules (NFR-02):
 
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` — safe for the browser.
 - `SUPABASE_SERVICE_ROLE_KEY` — **server only**. Never prefix with `NEXT_PUBLIC_`.
+
+## Node requirement
+
+Next.js 16 requires **Node.js ≥ 20.9**. The `engines` field in `package.json` enforces this.
 
 ## Next work package
 
