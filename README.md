@@ -10,7 +10,8 @@ Built from the DevOS Master Design Plan (`Omitofo/DevOS` → `projects/rescue-pa
 |--------------|-------------|--------|
 | **WP-01** | Project foundation & shared infrastructure | ✅ Complete (Next.js 16.3 Active LTS) |
 | **WP-02** | Database schema, RLS policies, seed data | ✅ Complete |
-| WP-03 … WP-18 | See `implementation.md` in the DevOS project folder | Pending |
+| **WP-03** | Auth & session layer | ✅ Complete |
+| WP-04 … WP-18 | See `implementation.md` in the DevOS project folder | Pending |
 
 ## Stack (locked by architecture)
 
@@ -31,35 +32,78 @@ cp .env.example .env.local
 # Edit .env.local with your Supabase project URL + keys
 
 # 3. Apply database migrations (see supabase/README.md)
-#    Run the two SQL files in the Supabase SQL Editor, or use the CLI.
+npx supabase db push
 
-# 4. Run development server
+# 4. Configure Auth redirect URLs (see below)
+
+# 5. Run development server
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).  
 Health check: [http://localhost:3000/api/health](http://localhost:3000/api/health).
 
+### Auth pages
+
+| Path | Audience |
+|------|----------|
+| `/auth/login` | Organization users (Email OTP) |
+| `/auth/admin/login` | Platform staff (email + password) |
+| `/auth/callback` | Supabase email-link callback |
+
+### Supabase Auth configuration (required for WP-03)
+
+1. **Dashboard → Authentication → URL configuration**
+   - Site URL: `http://localhost:3000` (or production URL)
+   - Redirect URLs: `http://localhost:3000/auth/callback`
+
+2. **Email OTP**  
+   Enable Email provider. Prefer OTP codes for org users (`signInWithOtp` + `verifyOtp`).
+
+3. **No public sign-ups**  
+   Disable public registration if available; org accounts are admin-provisioned only (FR-07). Our `requestOrgOtp` already sets `shouldCreateUser: false`.
+
+4. **JWT claims**  
+   When creating a user (Dashboard or Admin API), set `app_metadata`:
+
+   ```json
+   { "role": "org_user", "org_id": "a0000000-0000-4000-8000-000000000001" }
+   ```
+
+   or for staff:
+
+   ```json
+   { "role": "platform_admin" }
+   ```
+
+   Also insert a matching row into `public.profiles`.
+
+5. **MFA for platform staff**  
+   Enable MFA in Auth settings for admin accounts (recommended).
+
+### Elevated re-auth window
+
+Org mutations must run inside a 15-minute window after OTP verification.  
+Helpers: `requireElevatedWindow()`, `hasElevatedWindow()`, `grantElevatedWindow()` in `@/lib/auth`.
+
 ## Project layout
 
 ```
 src/
   app/
-    api/health/route.ts   # Basic health endpoint (NFR-10)
-    globals.css           # Design tokens + Tailwind base
-    layout.tsx            # Root layout
-    page.tsx              # Temporary placeholder home
+    auth/
+      login/              # Org Email OTP
+      admin/login/        # Platform staff password
+      callback/           # Email-link exchange
+    api/health/
   lib/
-    logger.ts             # Structured logging
-    supabase/
-      client.ts           # Browser client (anon key)
-      server.ts           # Server client + service-role client
-      proxy.ts            # Session refresh helper (used by root proxy)
-  proxy.ts                # Root proxy (Next.js 16 convention)
+    auth/                 # Session, roles, elevated window, actions
+    supabase/             # Clients + proxy session helper
+    logger.ts
+  proxy.ts
 
 supabase/
   migrations/             # WP-02 schema + seed
-  README.md               # How to apply migrations
 ```
 
 ## Environment variables
@@ -71,13 +115,11 @@ See `.env.example`. Critical rules (NFR-02):
 
 ## Node requirement
 
-Next.js 16 requires **Node.js ≥ 20.9**. The `engines` field in `package.json` enforces this.
+Next.js 16 requires **Node.js ≥ 20.9**.
 
 ## Next work package
 
-**WP-03** — Auth & session layer (Email OTP for org_user, MFA for platform staff, elevated re-auth window).
-
-All subsequent work packages map to architectural components and requirement IDs defined in the DevOS project artifacts.
+**WP-04** — Media service (authenticated upload, signed URLs, quotas).
 
 ---
 

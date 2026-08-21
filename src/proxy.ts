@@ -1,16 +1,11 @@
 /**
- * Root proxy — WP-01 skeleton (Next.js 16 convention).
+ * Root proxy — Next.js 16 convention (WP-01 + WP-03).
  *
- * Formerly middleware.ts. Next.js 16 renamed the file convention to “proxy”
- * to clarify its role as a thin network boundary (rewrites, redirects,
- * header/cookie handling). Heavy auth logic stays out of here; the proxy
- * only keeps the Supabase session fresh so Server Components see a current JWT.
+ * Thin network boundary: refreshes the Supabase session so Server Components
+ * always see a current JWT. Heavy auth logic (role checks, elevated window)
+ * lives in Server Components / Server Actions via @/lib/auth — not here.
  *
- * Route protection, elevated-reauth window checks, and locale detection
- * will be added in WP-03 / WP-16.
- *
- * Matcher deliberately excludes static assets and the health endpoint
- * so probes stay cheap.
+ * Matcher excludes static assets and the health endpoint.
  */
 
 import { type NextRequest } from "next/server";
@@ -22,13 +17,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimisation)
-     * - favicon.ico, sitemap, robots
-     * - api/health (keep health checks free of session work)
-     */
     "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|api/health).*)",
   ],
 };
