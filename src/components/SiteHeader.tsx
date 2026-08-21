@@ -1,5 +1,5 @@
 /**
- * Public site header — WP-05 + auth-aware nav.
+ * Public site header — discovery + shop + auth-aware nav.
  */
 
 import Link from "next/link";
@@ -17,6 +17,9 @@ export async function SiteHeader() {
         <nav className="flex items-center gap-4 text-sm text-muted-foreground">
           <Link href="/" className="hover:text-primary">
             Animals
+          </Link>
+          <Link href="/shop" className="hover:text-primary">
+            Shop
           </Link>
           {user?.role === "org_user" && (
             <Link href="/workspace" className="font-medium text-primary hover:underline">
