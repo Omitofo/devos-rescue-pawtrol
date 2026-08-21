@@ -1,11 +1,13 @@
 /**
- * Public site header — WP-05.
- * Lightweight navigation; shop link reserved for later WP-08.
+ * Public site header — WP-05 + auth-aware nav.
  */
 
 import Link from "next/link";
+import { getAuthUser } from "@/lib/auth/session";
 
-export function SiteHeader() {
+export async function SiteHeader() {
+  const user = await getAuthUser();
+
   return (
     <header className="border-b border-border bg-surface">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
@@ -16,9 +18,22 @@ export function SiteHeader() {
           <Link href="/" className="hover:text-primary">
             Animals
           </Link>
-          <Link href="/auth/login" className="hover:text-primary">
-            Org sign in
-          </Link>
+          {user?.role === "org_user" && (
+            <Link href="/workspace" className="font-medium text-primary hover:underline">
+              Workspace
+            </Link>
+          )}
+          {(user?.role === "platform_admin" ||
+            user?.role === "platform_moderator") && (
+            <Link href="/admin" className="font-medium text-primary hover:underline">
+              Admin
+            </Link>
+          )}
+          {!user && (
+            <Link href="/auth/login" className="hover:text-primary">
+              Org sign in
+            </Link>
+          )}
         </nav>
       </div>
     </header>

@@ -1,7 +1,5 @@
 /**
  * Public auth surface — WP-03.
- *
- * Import from "@/lib/auth" in Server Components / Server Actions.
  */
 
 export type { AppRole, AuthUser } from "./types";
@@ -26,6 +24,7 @@ export {
 export {
   requestOrgOtp,
   verifyOrgOtp,
+  orgPasswordLogin,
   adminPasswordLogin,
   signOut,
 } from "./actions";

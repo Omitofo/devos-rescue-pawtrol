@@ -1,28 +1,35 @@
 /**
- * Organization user login — Email OTP (WP-03).
- *
- * Flow:
- * 1. User enters email → requestOrgOtp
- * 2. User enters code → verifyOrgOtp (opens elevated window)
- * 3. Redirect to / (or a future /workspace path)
- *
- * No self-registration: shouldCreateUser is false (FR-07).
+ * Organization user login — Email OTP or password (WP-03).
+ * Password path unblocks local work when Supabase email is rate-limited.
  */
 
 "use client";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { requestOrgOtp, verifyOrgOtp } from "@/lib/auth/actions";
+import {
+  requestOrgOtp,
+  verifyOrgOtp,
+  orgPasswordLogin,
+} from "@/lib/auth/actions";
+
+type Mode = "otp" | "password";
 
 export default function OrgLoginPage() {
   const router = useRouter();
+  const [mode, setMode] = useState<Mode>("password");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
-  const [step, setStep] = useState<"email" | "code">("email");
+  const [otpStep, setOtpStep] = useState<"email" | "code">("email");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  function goWorkspace() {
+    router.push("/workspace");
+    router.refresh();
+  }
 
   function onRequestCode(e: React.FormEvent) {
     e.preventDefault();
@@ -32,25 +39,31 @@ export default function OrgLoginPage() {
       const result = await requestOrgOtp(email);
       if (result.ok) {
         setMessage(result.message ?? "Code sent.");
-        setStep("code");
+        setOtpStep("code");
       } else {
         setError(result.error);
       }
     });
   }
 
-  function onVerify(e: React.FormEvent) {
+  function onVerifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    startTransition(async () => {
+      const result = await verifyOrgOtp(email, code);
+      if (result.ok) goWorkspace();
+      else setError(result.error);
+    });
+  }
+
+  function onPassword(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setMessage(null);
     startTransition(async () => {
-      const result = await verifyOrgOtp(email, code);
-      if (result.ok) {
-        router.push("/");
-        router.refresh();
-      } else {
-        setError(result.error);
-      }
+      const result = await orgPasswordLogin(email, password);
+      if (result.ok) goWorkspace();
+      else setError(result.error);
     });
   }
 
@@ -62,11 +75,76 @@ export default function OrgLoginPage() {
             Organization sign in
           </h1>
           <p className="text-sm text-muted-foreground">
-            Email one-time code · no public registration
+            No public registration · admin-provisioned accounts only
           </p>
         </div>
 
-        {step === "email" ? (
+        <div className="flex rounded-lg border border-border p-0.5 text-sm">
+          <button
+            type="button"
+            onClick={() => {
+              setMode("password");
+              setError(null);
+              setMessage(null);
+            }}
+            className={`flex-1 rounded-md px-3 py-1.5 ${
+              mode === "password"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground"
+            }`}
+          >
+            Password
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMode("otp");
+              setError(null);
+              setMessage(null);
+            }}
+            className={`flex-1 rounded-md px-3 py-1.5 ${
+              mode === "otp"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground"
+            }`}
+          >
+            One-time code
+          </button>
+        </div>
+
+        {mode === "password" ? (
+          <form onSubmit={onPassword} className="space-y-4">
+            <label className="block space-y-1.5">
+              <span className="text-sm font-medium text-primary">Email</span>
+              <input
+                type="email"
+                required
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-accent-2"
+              />
+            </label>
+            <label className="block space-y-1.5">
+              <span className="text-sm font-medium text-primary">Password</span>
+              <input
+                type="password"
+                required
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-accent-2"
+              />
+            </label>
+            <button
+              type="submit"
+              disabled={pending}
+              className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+            >
+              {pending ? "Signing in…" : "Sign in"}
+            </button>
+          </form>
+        ) : otpStep === "email" ? (
           <form onSubmit={onRequestCode} className="space-y-4">
             <label className="block space-y-1.5">
               <span className="text-sm font-medium text-primary">Email</span>
@@ -89,7 +167,7 @@ export default function OrgLoginPage() {
             </button>
           </form>
         ) : (
-          <form onSubmit={onVerify} className="space-y-4">
+          <form onSubmit={onVerifyOtp} className="space-y-4">
             <p className="text-sm text-muted-foreground">
               Code sent to <strong className="text-primary">{email}</strong>
             </p>
@@ -117,10 +195,9 @@ export default function OrgLoginPage() {
               type="button"
               className="w-full text-sm text-muted-foreground underline"
               onClick={() => {
-                setStep("email");
+                setOtpStep("email");
                 setCode("");
                 setError(null);
-                setMessage(null);
               }}
             >
               Use a different email
@@ -131,9 +208,14 @@ export default function OrgLoginPage() {
         {message && (
           <p className="text-center text-sm text-accent-1">{message}</p>
         )}
-        {error && (
-          <p className="text-center text-sm text-red-600">{error}</p>
-        )}
+        {error && <p className="text-center text-sm text-red-600">{error}</p>}
+
+        <p className="text-center text-xs text-muted-foreground">
+          Platform staff?{" "}
+          <a href="/auth/admin/login" className="underline">
+            Admin sign in
+          </a>
+        </p>
       </div>
     </main>
   );

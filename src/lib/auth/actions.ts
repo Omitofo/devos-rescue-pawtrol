@@ -1,12 +1,13 @@
 "use server";
 
 /**
- * Auth server actions — WP-03.
+ * Auth server actions — WP-03 (+ org password for local/dev reliability).
  *
- * org_user  → Email OTP (login + elevated re-auth)
- * platform_* → Email + password (MFA to be enabled in Supabase dashboard)
+ * org_user  → Email OTP (preferred) or email + password
+ * platform_* → Email + password
  *
- * These actions never expose the service-role key (NFR-02).
+ * Password login for org_user also opens the elevated window so workspace
+ * mutations work without a second OTP when email is rate-limited.
  */
 
 import { createClient } from "@/lib/supabase/server";
@@ -20,9 +21,6 @@ export type ActionResult =
 
 /**
  * Request an Email OTP for an organization user.
- * Supabase sends a 6–8 digit code (or magic link, depending on project config).
- *
- * Free-tier projects are rate-limited on outbound auth email (~2–4 / hour per address).
  */
 export async function requestOrgOtp(email: string): Promise<ActionResult> {
   const normalised = email.trim().toLowerCase();
@@ -34,7 +32,6 @@ export async function requestOrgOtp(email: string): Promise<ActionResult> {
   const { error } = await supabase.auth.signInWithOtp({
     email: normalised,
     options: {
-      // Do not create users automatically — org accounts are admin-provisioned only (FR-07).
       shouldCreateUser: false,
     },
   });
@@ -50,7 +47,7 @@ export async function requestOrgOtp(email: string): Promise<ActionResult> {
       return {
         ok: false,
         error:
-          "Email rate limit reached. Wait about an hour, or use Supabase Dashboard → Authentication → Users → magic link for local testing.",
+          "Email rate limit reached. Use the Password tab, or wait about an hour.",
       };
     }
 
@@ -65,7 +62,7 @@ export async function requestOrgOtp(email: string): Promise<ActionResult> {
 }
 
 /**
- * Verify the Email OTP for an org user and open the elevated window.
+ * Verify Email OTP and open elevated window.
  */
 export async function verifyOrgOtp(
   email: string,
@@ -104,7 +101,54 @@ export async function verifyOrgOtp(
 }
 
 /**
- * Platform staff: email + password sign-in.
+ * Organization user: email + password.
+ * Opens elevated window on success (same trust level as OTP for mutations).
+ */
+export async function orgPasswordLogin(
+  email: string,
+  password: string
+): Promise<ActionResult> {
+  const normalised = email.trim().toLowerCase();
+  if (!normalised || !password) {
+    return { ok: false, error: "Email and password are required." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: normalised,
+    password,
+  });
+
+  if (error || !data.session) {
+    logger.warn("auth.org_password_failed", {
+      email: normalised,
+      message: error?.message,
+    });
+    return { ok: false, error: "Invalid email or password." };
+  }
+
+  const role = data.user?.app_metadata?.role as string | undefined;
+  if (role && role !== "org_user") {
+    await supabase.auth.signOut();
+    return {
+      ok: false,
+      error: "This account is not an organisation user. Use Admin sign in instead.",
+    };
+  }
+
+  if (!data.user?.app_metadata?.org_id) {
+    logger.warn("auth.org_password_missing_org", { userId: data.user?.id });
+    // Still allow session; workspace will redirect if org_id missing
+  }
+
+  await grantElevatedWindow();
+
+  logger.info("auth.org_password_ok", { userId: data.user?.id });
+  return { ok: true, message: "Signed in." };
+}
+
+/**
+ * Platform staff: email + password.
  */
 export async function adminPasswordLogin(
   email: string,
