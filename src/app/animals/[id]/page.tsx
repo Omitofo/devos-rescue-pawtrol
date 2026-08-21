@@ -1,7 +1,5 @@
 /**
- * Animal detail — WP-05 (J-02).
- *
- * Published only. CTA records interest and sends the user to the org Contact section.
+ * Animal detail — WP-05 + WP-04 gallery.
  */
 
 import { notFound } from "next/navigation";
@@ -9,6 +7,7 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
 import { InterestCta } from "@/components/InterestCta";
 import { getPublishedAnimal } from "@/lib/data/animals";
+import { listAnimalMedia } from "@/lib/media/service";
 
 type Params = Promise<{ id: string }>;
 
@@ -17,6 +16,10 @@ export default async function AnimalDetailPage({ params }: { params: Params }) {
   const animal = await getPublishedAnimal(id);
 
   if (!animal) notFound();
+
+  const media = await listAnimalMedia(id);
+  const hero =
+    media[0]?.public_url ?? animal.cover_image_url ?? null;
 
   const org = animal.organizations;
   const location = [animal.city, animal.subdivision, animal.country_code]
@@ -43,22 +46,41 @@ export default async function AnimalDetailPage({ params }: { params: Params }) {
         </Link>
 
         <div className="grid gap-8 lg:grid-cols-2">
-          <div className="relative aspect-square overflow-hidden rounded-2xl bg-muted">
-            {animal.cover_image_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={animal.cover_image_url}
-                alt={animal.name}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center text-7xl">
-                {animal.species === "cat"
-                  ? "🐱"
-                  : animal.species === "dog"
-                    ? "🐶"
-                    : "🐾"}
-              </div>
+          <div className="space-y-3">
+            <div className="relative aspect-square overflow-hidden rounded-2xl bg-muted">
+              {hero ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={hero}
+                  alt={animal.name}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-7xl">
+                  {animal.species === "cat"
+                    ? "🐱"
+                    : animal.species === "dog"
+                      ? "🐶"
+                      : "🐾"}
+                </div>
+              )}
+            </div>
+            {media.length > 1 && (
+              <ul className="grid grid-cols-4 gap-2">
+                {media.map((m) => (
+                  <li
+                    key={m.id}
+                    className="aspect-square overflow-hidden rounded-lg border border-border"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={m.public_url}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
 
