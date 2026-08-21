@@ -43,9 +43,23 @@ export default async function AnimalDetailPage({ params }: { params: Params }) {
         </Link>
 
         <div className="grid gap-8 lg:grid-cols-2">
-          {/* Media placeholder */}
-          <div className="flex aspect-square items-center justify-center rounded-2xl bg-muted text-7xl">
-            {animal.species === "cat" ? "🐱" : animal.species === "dog" ? "🐶" : "🐾"}
+          <div className="relative aspect-square overflow-hidden rounded-2xl bg-muted">
+            {animal.cover_image_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={animal.cover_image_url}
+                alt={animal.name}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center text-7xl">
+                {animal.species === "cat"
+                  ? "🐱"
+                  : animal.species === "dog"
+                    ? "🐶"
+                    : "🐾"}
+              </div>
+            )}
           </div>
 
           <div className="space-y-6">

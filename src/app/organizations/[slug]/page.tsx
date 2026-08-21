@@ -36,19 +36,28 @@ export default async function OrgProfilePage({ params }: { params: Params }) {
           ← All animals
         </Link>
 
-        <header className="mb-10 space-y-3">
-          <h1 className="text-3xl font-semibold tracking-tight text-primary">
-            {org.name}
-          </h1>
-          {location && (
-            <p className="text-muted-foreground">{location}</p>
+        <header className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-start">
+          {org.logo_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={org.logo_url}
+              alt=""
+              className="h-20 w-20 rounded-xl object-cover ring-1 ring-border"
+            />
           )}
-          {org.description && (
-            <p className="max-w-2xl text-primary/85">{org.description}</p>
-          )}
+          <div className="space-y-2">
+            <h1 className="text-3xl font-semibold tracking-tight text-primary">
+              {org.name}
+            </h1>
+            {location && (
+              <p className="text-muted-foreground">{location}</p>
+            )}
+            {org.description && (
+              <p className="max-w-2xl text-primary/85">{org.description}</p>
+            )}
+          </div>
         </header>
 
-        {/* Contact section — destination of interest CTA */}
         <section
           id="contact"
           className="mb-12 scroll-mt-8 rounded-xl border border-border bg-surface-elevated p-6"
@@ -98,7 +107,6 @@ export default async function OrgProfilePage({ params }: { params: Params }) {
           </ul>
         </section>
 
-        {/* Published animals */}
         <section>
           <h2 className="mb-4 text-lg font-semibold text-primary">
             Animals available
