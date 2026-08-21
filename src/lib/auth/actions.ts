@@ -21,6 +21,8 @@ export type ActionResult =
 /**
  * Request an Email OTP for an organization user.
  * Supabase sends a 6–8 digit code (or magic link, depending on project config).
+ *
+ * Free-tier projects are rate-limited on outbound auth email (~2–4 / hour per address).
  */
 export async function requestOrgOtp(email: string): Promise<ActionResult> {
   const normalised = email.trim().toLowerCase();
@@ -38,8 +40,20 @@ export async function requestOrgOtp(email: string): Promise<ActionResult> {
   });
 
   if (error) {
-    logger.warn("auth.org_otp_request_failed", { email: normalised, message: error.message });
-    // Generic message to avoid account enumeration
+    logger.warn("auth.org_otp_request_failed", {
+      email: normalised,
+      message: error.message,
+    });
+
+    const msg = error.message.toLowerCase();
+    if (msg.includes("rate limit") || msg.includes("email rate")) {
+      return {
+        ok: false,
+        error:
+          "Email rate limit reached. Wait about an hour, or use Supabase Dashboard → Authentication → Users → magic link for local testing.",
+      };
+    }
+
     return {
       ok: false,
       error: "Could not send code. Check the email or contact the platform team.",
@@ -72,11 +86,13 @@ export async function verifyOrgOtp(
   });
 
   if (error || !data.session) {
-    logger.warn("auth.org_otp_verify_failed", { email: normalised, message: error?.message });
+    logger.warn("auth.org_otp_verify_failed", {
+      email: normalised,
+      message: error?.message,
+    });
     return { ok: false, error: "Invalid or expired code. Please try again." };
   }
 
-  // Open the elevated re-auth window for org mutations.
   await grantElevatedWindow();
 
   logger.info("auth.org_otp_verified", {
@@ -89,7 +105,6 @@ export async function verifyOrgOtp(
 
 /**
  * Platform staff: email + password sign-in.
- * MFA challenge (if enabled in Supabase) is handled by the client / dashboard settings.
  */
 export async function adminPasswordLogin(
   email: string,
@@ -107,16 +122,20 @@ export async function adminPasswordLogin(
   });
 
   if (error || !data.session) {
-    logger.warn("auth.admin_login_failed", { email: normalised, message: error?.message });
+    logger.warn("auth.admin_login_failed", {
+      email: normalised,
+      message: error?.message,
+    });
     return { ok: false, error: "Invalid credentials." };
   }
 
-  // Soft check: prefer platform roles (claims set at provision time).
   const role = data.user?.app_metadata?.role as string | undefined;
   if (role && role !== "platform_admin" && role !== "platform_moderator") {
-    // Not staff — sign out and reject
     await supabase.auth.signOut();
-    return { ok: false, error: "This account is not authorised for the admin console." };
+    return {
+      ok: false,
+      error: "This account is not authorised for the admin console.",
+    };
   }
 
   logger.info("auth.admin_login_ok", { userId: data.user?.id });
