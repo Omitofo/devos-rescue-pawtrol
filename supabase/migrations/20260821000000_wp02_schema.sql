@@ -1,10 +1,10 @@
 -- =============================================================================
--- WP-02 — Core schema, RLS, indexes
+-- WP-02 -- Core schema, RLS, indexes
 -- Rescue Pawtrol (DevOS projects/rescue-pawtrol)
 --
 -- Source of truth for this migration:
---   architecture.md §3–§5, requirements.md FR-08/11/18–20, NFR-01/03/05
---   Animal status lifecycle (RQ-01): draft → published → pending|adopted|removed
+--   architecture.md, requirements.md FR-08/11/18-20, NFR-01/03/05
+--   Animal status lifecycle (RQ-01): draft -> published -> pending|adopted|removed
 --   Roles (Q3): platform_admin, platform_moderator, org_user
 --   Starting quotas (FR-11): 50 active animals, 8 images/animal, 8 MB, 2 GB,
 --                            20 animal CUD/day, 40 image uploads/day
@@ -26,7 +26,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";  -- gen_random_uuid()
 -- Enums
 -- ---------------------------------------------------------------------------
 
--- Platform + organization roles (single org_user role — no owner/editor split)
+-- Platform + organization roles (single org_user role -- no owner/editor split)
 CREATE TYPE public.app_role AS ENUM (
   'platform_admin',
   'platform_moderator',
@@ -42,16 +42,16 @@ CREATE TYPE public.org_status AS ENUM (
 );
 
 -- Animal status lifecycle (RQ-01)
--- draft → published → (pending | adopted | removed)
+-- draft -> published -> (pending | adopted | removed)
 CREATE TYPE public.animal_status AS ENUM (
   'draft',      -- org is still editing; not public
   'published',  -- visible on public discovery
-  'pending',    -- adoption in progress (still listed or soft-hidden — app decides)
+  'pending',    -- adoption in progress (still listed or soft-hidden -- app decides)
   'adopted',    -- successfully placed
   'removed'     -- soft-delete terminal state (excluded from public queries)
 );
 
--- Lead status for “Join as Rescue” form
+-- Lead status for "Join as Rescue" form
 CREATE TYPE public.lead_status AS ENUM (
   'new',
   'contacted',
@@ -71,7 +71,7 @@ CREATE TYPE public.order_status AS ENUM (
   'refunded'
 );
 
--- Analytics event types (day-one set from architecture §6 / Q10)
+-- Analytics event types (day-one set from architecture / Q10)
 CREATE TYPE public.analytics_event_type AS ENUM (
   'interest_cta',
   'animal_view',
@@ -86,16 +86,17 @@ CREATE TYPE public.analytics_event_type AS ENUM (
 -- ---------------------------------------------------------------------------
 -- Helper: current user's role and org_id from JWT app_metadata
 -- ---------------------------------------------------------------------------
--- Supabase Auth stores custom claims in auth.jwt() → app_metadata.
+-- Supabase Auth stores custom claims in auth.jwt() -> app_metadata.
 -- We set these when provisioning users (WP-03 / WP-07).
 -- These helpers keep RLS policies readable and consistent.
+-- IMPORTANT: use ASCII operators -> and ->> (not Unicode arrows).
 
 CREATE OR REPLACE FUNCTION public.jwt_role()
 RETURNS public.app_role
 LANGUAGE sql
 STABLE
 AS $$
-  SELECT NULLIF(auth.jwt() → 'app_metadata' →> 'role', '')::public.app_role;
+  SELECT NULLIF(auth.jwt() -> 'app_metadata' ->> 'role', '')::public.app_role;
 $$;
 
 CREATE OR REPLACE FUNCTION public.jwt_org_id()
@@ -103,7 +104,7 @@ RETURNS uuid
 LANGUAGE sql
 STABLE
 AS $$
-  SELECT NULLIF(auth.jwt() → 'app_metadata' →> 'org_id', '')::uuid;
+  SELECT NULLIF(auth.jwt() -> 'app_metadata' ->> 'org_id', '')::uuid;
 $$;
 
 CREATE OR REPLACE FUNCTION public.is_platform_admin()
@@ -196,12 +197,12 @@ CREATE TABLE public.animals (
   status          public.animal_status NOT NULL DEFAULT 'draft',
 
   -- Taxonomy (FR-02, FR-18)
-  species         text NOT NULL,                 -- dog, cat, other…
+  species         text NOT NULL,                 -- dog, cat, other
   breed           text,
   age_group       text,                          -- puppy/kitten, young, adult, senior
   sex             text,                          -- male, female, unknown
   size            text,                          -- small, medium, large, xlarge
-  compatibility   jsonb DEFAULT '{}'::jsonb,     -- {kids: bool, dogs: bool, cats: bool, …}
+  compatibility   jsonb DEFAULT '{}'::jsonb,     -- {kids: bool, dogs: bool, cats: bool}
   special_needs   text,
 
   -- Location (ISO + free text)
@@ -216,7 +217,7 @@ CREATE TABLE public.animals (
   description     text,                          -- full detail
 
   -- Soft-delete / retention (FR-19, NFR-05)
-  deleted_at      timestamptz,                   -- set when status → removed or explicit soft-delete
+  deleted_at      timestamptz,                   -- set when status -> removed or explicit soft-delete
   archived_at     timestamptz,                   -- later retention job
 
   created_at      timestamptz NOT NULL DEFAULT now(),
@@ -251,7 +252,7 @@ COMMENT ON TABLE public.animal_media IS
   'Metadata for images stored in Supabase Storage. Quota enforcement uses size_bytes + counts.';
 
 -- ---------------------------------------------------------------------------
--- interest_events (CTA clicks — FR-05, FR-17)
+-- interest_events (CTA clicks -- FR-05, FR-17)
 -- ---------------------------------------------------------------------------
 CREATE TABLE public.interest_events (
   id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -281,7 +282,7 @@ COMMENT ON TABLE public.analytics_events IS
   'Day-one product metrics (views, search, shop funnel). No PII required.';
 
 -- ---------------------------------------------------------------------------
--- leads (“Join as Rescue” / Contact us — FR-16)
+-- leads ("Join as Rescue" / Contact us -- FR-16)
 -- ---------------------------------------------------------------------------
 CREATE TABLE public.leads (
   id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -314,7 +315,7 @@ CREATE TABLE public.organization_quotas (
   max_animal_cud_per_day int NOT NULL DEFAULT 20,
   max_image_uploads_per_day int NOT NULL DEFAULT 40,
 
-  -- Current usage (updated atomically on writes — WP-13)
+  -- Current usage (updated atomically on writes -- WP-13)
   active_animals_count  int NOT NULL DEFAULT 0,
   storage_bytes_used    bigint NOT NULL DEFAULT 0,
   animal_cud_today      int NOT NULL DEFAULT 0,
@@ -328,7 +329,7 @@ COMMENT ON TABLE public.organization_quotas IS
   'Per-org quota limits and running counters. Counters updated in same transaction as business writes.';
 
 -- ---------------------------------------------------------------------------
--- products (shop catalogue — FR-12)
+-- products (shop catalogue -- FR-12)
 -- ---------------------------------------------------------------------------
 CREATE TABLE public.products (
   id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -354,7 +355,7 @@ ALTER TABLE public.analytics_events
   FOREIGN KEY (product_id) REFERENCES public.products (id) ON DELETE SET NULL;
 
 -- ---------------------------------------------------------------------------
--- orders + order_items (guest checkout — FR-13, FR-14)
+-- orders + order_items (guest checkout -- FR-13, FR-14)
 -- ---------------------------------------------------------------------------
 CREATE TABLE public.orders (
   id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -390,7 +391,7 @@ CREATE TABLE public.order_items (
   product_name    text NOT NULL,                 -- snapshot at purchase time
   quantity        int NOT NULL CHECK (quantity > 0),
   unit_price_cents int NOT NULL,
-  metadata        jsonb DEFAULT '{}'::jsonb      -- size, color, provider SKU…
+  metadata        jsonb DEFAULT '{}'::jsonb      -- size, color, provider SKU
 );
 
 COMMENT ON TABLE public.orders IS
@@ -404,7 +405,7 @@ COMMENT ON TABLE public.orders IS
 CREATE INDEX idx_organizations_status ON public.organizations (status) WHERE deleted_at IS NULL;
 CREATE INDEX idx_organizations_country ON public.organizations (country_code) WHERE deleted_at IS NULL;
 
--- Animals — public discovery path
+-- Animals -- public discovery path
 CREATE INDEX idx_animals_public_listing
   ON public.animals (status, country_code, species, created_at DESC)
   WHERE status = 'published' AND deleted_at IS NULL;
@@ -496,7 +497,7 @@ CREATE TRIGGER organizations_create_quotas
 -- =============================================================================
 -- Principles:
 --   1. Public can read published animals + active org public profiles.
---   2. Org users can read/write only their own org’s data.
+--   2. Org users can read/write only their own org data.
 --   3. Platform admins/moderators can read/write everything needed for ops.
 --   4. Interest + analytics events: anyone can insert (no PII); only admins read.
 --   5. Leads: anyone can insert; only admins read/update.
