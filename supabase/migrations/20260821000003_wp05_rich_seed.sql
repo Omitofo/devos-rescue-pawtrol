@@ -1,40 +1,13 @@
 -- =============================================================================
 -- Rich demo seed — 3 realistic rescue organisations + animals with photos
--- Safe to re-run: deletes previous fixed-UUID demo rows then re-inserts.
--- Image URLs are Unsplash (hotlink-friendly) for local/demo only.
+--
+-- IMPORTANT: Do NOT delete organizations that may be referenced by profiles.
+-- ON DELETE SET NULL on profiles.org_id + CHECK (org_user requires org_id)
+-- would fail. We upsert orgs and only replace animals / interest demo rows.
 -- =============================================================================
 
--- Clear prior demo data (fixed UUIDs from WP-02 / this seed)
-DELETE FROM public.interest_events
-  WHERE org_id IN (
-    'a0000000-0000-4000-8000-000000000001',
-    'a0000000-0000-4000-8000-000000000002',
-    'a0000000-0000-4000-8000-000000000003'
-  );
-
-DELETE FROM public.animals
-  WHERE org_id IN (
-    'a0000000-0000-4000-8000-000000000001',
-    'a0000000-0000-4000-8000-000000000002',
-    'a0000000-0000-4000-8000-000000000003'
-  );
-
-DELETE FROM public.organization_quotas
-  WHERE org_id IN (
-    'a0000000-0000-4000-8000-000000000001',
-    'a0000000-0000-4000-8000-000000000002',
-    'a0000000-0000-4000-8000-000000000003'
-  );
-
-DELETE FROM public.organizations
-  WHERE id IN (
-    'a0000000-0000-4000-8000-000000000001',
-    'a0000000-0000-4000-8000-000000000002',
-    'a0000000-0000-4000-8000-000000000003'
-  );
-
 -- ---------------------------------------------------------------------------
--- Organizations
+-- Organizations (upsert by fixed id)
 -- ---------------------------------------------------------------------------
 INSERT INTO public.organizations (
   id, name, slug, status,
@@ -86,16 +59,46 @@ INSERT INTO public.organizations (
   'VE',
   'Distrito Capital',
   'Caracas'
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  status = EXCLUDED.status,
+  description = EXCLUDED.description,
+  logo_url = EXCLUDED.logo_url,
+  website_url = EXCLUDED.website_url,
+  public_email = EXCLUDED.public_email,
+  public_phone = EXCLUDED.public_phone,
+  cta_text = EXCLUDED.cta_text,
+  country_code = EXCLUDED.country_code,
+  subdivision = EXCLUDED.subdivision,
+  city = EXCLUDED.city,
+  updated_at = now();
+
+-- Ensure quota rows exist (trigger may have already created them)
+INSERT INTO public.organization_quotas (org_id, max_active_animals)
+VALUES
+  ('a0000000-0000-4000-8000-000000000001', 80),
+  ('a0000000-0000-4000-8000-000000000002', 50),
+  ('a0000000-0000-4000-8000-000000000003', 50)
+ON CONFLICT (org_id) DO UPDATE SET
+  max_active_animals = EXCLUDED.max_active_animals;
+
+-- ---------------------------------------------------------------------------
+-- Replace demo animals only (fixed UUID range)
+-- ---------------------------------------------------------------------------
+DELETE FROM public.interest_events
+WHERE animal_id IN (
+  SELECT id FROM public.animals
+  WHERE id BETWEEN 'b0000000-0000-4000-8000-000000000001'::uuid
+              AND 'b0000000-0000-4000-8000-000000000099'::uuid
 );
 
--- Quotas are auto-created by trigger; bump demo limits slightly
-UPDATE public.organization_quotas
-SET max_active_animals = 80
-WHERE org_id = 'a0000000-0000-4000-8000-000000000001';
+DELETE FROM public.animals
+WHERE id BETWEEN 'b0000000-0000-4000-8000-000000000001'::uuid
+            AND 'b0000000-0000-4000-8000-000000000099'::uuid;
 
--- ---------------------------------------------------------------------------
--- Animals — Hope Paws Valencia
--- ---------------------------------------------------------------------------
+-- Hope Paws Valencia
 INSERT INTO public.animals (
   id, org_id, name, slug, status,
   species, breed, age_group, sex, size,
@@ -164,9 +167,7 @@ INSERT INTO public.animals (
   now()
 );
 
--- ---------------------------------------------------------------------------
--- Animals — Manila Street Dogs
--- ---------------------------------------------------------------------------
+-- Manila Street Dogs
 INSERT INTO public.animals (
   id, org_id, name, slug, status,
   species, breed, age_group, sex, size,
@@ -220,9 +221,7 @@ INSERT INTO public.animals (
   now()
 );
 
--- ---------------------------------------------------------------------------
--- Animals — Caracas Animal Bridge
--- ---------------------------------------------------------------------------
+-- Caracas Animal Bridge
 INSERT INTO public.animals (
   id, org_id, name, slug, status,
   species, breed, age_group, sex, size,
@@ -276,13 +275,28 @@ INSERT INTO public.animals (
   now()
 );
 
--- Sync active animal counters
+-- Sync active animal counters for the three demo orgs
 UPDATE public.organization_quotas q
-SET active_animals_count = sub.cnt
+SET active_animals_count = sub.cnt,
+    updated_at = now()
 FROM (
   SELECT org_id, count(*)::int AS cnt
   FROM public.animals
-  WHERE status = 'published' AND deleted_at IS NULL
+  WHERE status = 'published'
+    AND deleted_at IS NULL
+    AND org_id IN (
+      'a0000000-0000-4000-8000-000000000001',
+      'a0000000-0000-4000-8000-000000000002',
+      'a0000000-0000-4000-8000-000000000003'
+    )
   GROUP BY org_id
 ) sub
 WHERE q.org_id = sub.org_id;
+
+-- Keep your test org_user attached to Hope Paws Valencia if still null
+UPDATE public.profiles
+SET org_id = 'a0000000-0000-4000-8000-000000000001',
+    updated_at = now()
+WHERE role = 'org_user'
+  AND org_id IS NULL
+  AND email = 'henrique.dev.mail@gmail.com';
