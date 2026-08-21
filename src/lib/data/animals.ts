@@ -19,6 +19,7 @@ export type AnimalCard = {
   summary: string | null;
   country_code: string | null;
   city: string | null;
+  cover_image_url: string | null;
   org_id: string;
   organizations: { name: string; slug: string } | null;
 };
@@ -52,6 +53,15 @@ export type AnimalFilters = {
   country?: string;
 };
 
+function normaliseOrg<T extends { organizations: unknown }>(row: T) {
+  return {
+    ...row,
+    organizations: Array.isArray(row.organizations)
+      ? row.organizations[0] ?? null
+      : row.organizations,
+  };
+}
+
 /**
  * List published animals for the public grid.
  */
@@ -65,7 +75,7 @@ export async function listPublishedAnimals(
     .select(
       `
       id, name, slug, species, breed, age_group, sex, size,
-      summary, country_code, city, org_id,
+      summary, country_code, city, cover_image_url, org_id,
       organizations ( name, slug )
     `
     )
@@ -93,13 +103,7 @@ export async function listPublishedAnimals(
     return [];
   }
 
-  // Supabase may return organizations as object or array depending on relationship
-  return (data ?? []).map((row) => ({
-    ...row,
-    organizations: Array.isArray(row.organizations)
-      ? row.organizations[0] ?? null
-      : row.organizations,
-  })) as AnimalCard[];
+  return (data ?? []).map((row) => normaliseOrg(row)) as AnimalCard[];
 }
 
 /**
@@ -116,7 +120,8 @@ export async function getPublishedAnimal(
       `
       id, name, slug, species, breed, age_group, sex, size,
       summary, description, special_needs, compatibility,
-      country_code, subdivision, city, org_id, status, published_at,
+      country_code, subdivision, city, cover_image_url,
+      org_id, status, published_at,
       organizations (
         id, name, slug, cta_text,
         public_email, public_phone, website_url,
@@ -131,12 +136,7 @@ export async function getPublishedAnimal(
 
   if (error || !data) return null;
 
-  return {
-    ...data,
-    organizations: Array.isArray(data.organizations)
-      ? data.organizations[0] ?? null
-      : data.organizations,
-  } as AnimalDetail;
+  return normaliseOrg(data) as AnimalDetail;
 }
 
 /**
@@ -152,7 +152,7 @@ export async function listOrgPublishedAnimals(
     .select(
       `
       id, name, slug, species, breed, age_group, sex, size,
-      summary, country_code, city, org_id,
+      summary, country_code, city, cover_image_url, org_id,
       organizations ( name, slug )
     `
     )
@@ -163,10 +163,5 @@ export async function listOrgPublishedAnimals(
 
   if (error) return [];
 
-  return (data ?? []).map((row) => ({
-    ...row,
-    organizations: Array.isArray(row.organizations)
-      ? row.organizations[0] ?? null
-      : row.organizations,
-  })) as AnimalCard[];
+  return (data ?? []).map((row) => normaliseOrg(row)) as AnimalCard[];
 }

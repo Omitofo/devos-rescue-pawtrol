@@ -13,9 +13,20 @@ export function AnimalCard({ animal }: { animal: AnimalCardType }) {
       href={`/animals/${animal.id}`}
       className="group flex flex-col overflow-hidden rounded-xl border border-border bg-surface-elevated transition hover:border-primary/30 hover:shadow-sm"
     >
-      {/* Photo placeholder until WP-04 media */}
-      <div className="flex aspect-[4/3] items-center justify-center bg-muted text-4xl">
-        {animal.species === "cat" ? "🐱" : animal.species === "dog" ? "🐶" : "🐾"}
+      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+        {animal.cover_image_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={animal.cover_image_url}
+            alt={animal.name}
+            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+            loading="lazy"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center text-4xl">
+            {animal.species === "cat" ? "🐱" : animal.species === "dog" ? "🐶" : "🐾"}
+          </div>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col gap-1 p-4">
