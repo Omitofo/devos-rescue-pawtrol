@@ -50,8 +50,8 @@ src/
     supabase/
       client.ts           # Browser client (anon key)
       server.ts           # Server client + service-role client
-      middleware.ts       # Session refresh helper
-  middleware.ts           # Root middleware (session keep-alive)
+      proxy.ts            # Session refresh helper (used by root proxy)
+  proxy.ts                # Root proxy (Next.js 16 convention; replaces middleware)
 ```
 
 ## Environment variables

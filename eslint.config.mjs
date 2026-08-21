@@ -1,27 +1,22 @@
 /**
- * ESLint flat config — required after Next.js 16 removed `next lint`.
+ * ESLint flat config for Next.js 16.
  *
- * Uses the official eslint-config-next package which already includes
- * React, React Hooks, and Next.js rules. Extend later if the project
- * needs additional plugins (a11y, import ordering, etc.).
+ * Uses the native flat export from eslint-config-next (no FlatCompat).
+ * This avoids the circular-structure error that occurs when wrapping
+ * the Next config through @eslint/eslintrc FlatCompat.
+ *
+ * Docs: https://nextjs.org/docs/app/api-reference/config/eslint
  */
 
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
+import { defineConfig, globalIgnores } from "eslint/config";
+import nextVitals from "eslint-config-next/core-web-vitals";
+import nextTs from "eslint-config-next/typescript";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
-
-const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
-  {
-    ignores: [".next/**", "node_modules/**", "out/**", "build/**"],
-  },
-];
+const eslintConfig = defineConfig([
+  ...nextVitals,
+  ...nextTs,
+  // Override / extend default ignores from eslint-config-next.
+  globalIgnores([".next/**", "out/**", "build/**", "node_modules/**", "next-env.d.ts"]),
+]);
 
 export default eslintConfig;

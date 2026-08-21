@@ -18,6 +18,13 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
+/** Shape of cookies passed to setAll by @supabase/ssr */
+type CookieToSet = {
+  name: string;
+  value: string;
+  options?: Record<string, unknown>;
+};
+
 /**
  * Cookie-aware server client (anon key + user JWT when present).
  */
@@ -32,13 +39,13 @@ export async function createClient() {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: CookieToSet[]) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
               cookieStore.set(name, value, options)
             );
           } catch {
-            // Called from a Server Component — middleware or a Route Handler
+            // Called from a Server Component — proxy or a Route Handler
             // will refresh the session. Safe to ignore here.
           }
         },
