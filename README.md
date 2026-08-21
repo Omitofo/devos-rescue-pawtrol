@@ -8,41 +8,33 @@ Built from the DevOS Master Design Plan (`Omitofo/DevOS` → `projects/rescue-pa
 
 | Work Package | Description | Status |
 |--------------|-------------|--------|
-| **WP-01** | Project foundation & shared infrastructure | ✅ |
-| **WP-02** | Database schema, RLS policies, seed data | ✅ |
-| **WP-03** | Auth & session layer | ✅ |
-| **WP-05** | Public Discovery (grid, filters, detail, interest CTA) | ✅ |
-| WP-04, WP-06 … WP-18 | See `implementation.md` | Pending |
-
-## Stack
-
-- **Next.js 16** (App Router) — Active LTS
-- **TypeScript** (strict)
-- **Tailwind CSS** + design tokens
-- **Supabase** (PostgreSQL + Auth + Storage + RLS)
+| **WP-01** | Foundation | ✅ |
+| **WP-02** | Schema + RLS + seed | ✅ |
+| **WP-03** | Auth & session | ✅ |
+| **WP-05** | Public Discovery | ✅ |
+| **WP-06** | Organization Workspace | ✅ |
+| WP-04, WP-07 … | See `implementation.md` | Pending |
 
 ## Quick start
 
 ```bash
 npm install
-cp .env.example .env.local   # fill Supabase keys
-npx supabase db push         # if not already applied
+cp .env.example .env.local
+npx supabase db push
 npm run dev
 ```
 
 | Path | Purpose |
 |------|--------|
-| `/` | Animal discovery grid + filters |
+| `/` | Public animal grid |
 | `/animals/[id]` | Animal detail + interest CTA |
-| `/organizations/[slug]` | Org profile + Contact section |
+| `/organizations/[slug]` | Org profile |
+| `/workspace` | Org animal management |
 | `/auth/login` | Org Email OTP |
-| `/auth/admin/login` | Platform staff |
 | `/api/health` | Health check |
 
-## Next recommended
-
-**WP-04** Media service, or **WP-11** day-one analytics polish, or **WP-06** Organization Workspace.
+Org mutations require a 15-minute elevated OTP window after sign-in / re-auth.
 
 ---
 
-*Comments throughout the codebase are written for both human readers and future AI context windows.*
+*Comments written for humans and future AI context windows.*
