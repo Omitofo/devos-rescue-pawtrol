@@ -9,7 +9,8 @@ Built from the DevOS Master Design Plan (`Omitofo/DevOS` → `projects/rescue-pa
 | Work Package | Description | Status |
 |--------------|-------------|--------|
 | **WP-01** | Project foundation & shared infrastructure | ✅ Complete (Next.js 16.3 Active LTS) |
-| WP-02 … WP-18 | See `implementation.md` in the DevOS project folder | Pending |
+| **WP-02** | Database schema, RLS policies, seed data | ✅ Complete |
+| WP-03 … WP-18 | See `implementation.md` in the DevOS project folder | Pending |
 
 ## Stack (locked by architecture)
 
@@ -29,14 +30,17 @@ npm install
 cp .env.example .env.local
 # Edit .env.local with your Supabase project URL + keys
 
-# 3. Run development server
+# 3. Apply database migrations (see supabase/README.md)
+#    Run the two SQL files in the Supabase SQL Editor, or use the CLI.
+
+# 4. Run development server
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).  
 Health check: [http://localhost:3000/api/health](http://localhost:3000/api/health).
 
-## Project layout (WP-01)
+## Project layout
 
 ```
 src/
@@ -51,7 +55,11 @@ src/
       client.ts           # Browser client (anon key)
       server.ts           # Server client + service-role client
       proxy.ts            # Session refresh helper (used by root proxy)
-  proxy.ts                # Root proxy (Next.js 16 convention; replaces middleware)
+  proxy.ts                # Root proxy (Next.js 16 convention)
+
+supabase/
+  migrations/             # WP-02 schema + seed
+  README.md               # How to apply migrations
 ```
 
 ## Environment variables
@@ -67,7 +75,7 @@ Next.js 16 requires **Node.js ≥ 20.9**. The `engines` field in `package.json` 
 
 ## Next work package
 
-**WP-02** — Database schema, RLS policies, and seed data.
+**WP-03** — Auth & session layer (Email OTP for org_user, MFA for platform staff, elevated re-auth window).
 
 All subsequent work packages map to architectural components and requirement IDs defined in the DevOS project artifacts.
 
