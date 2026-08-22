@@ -49,27 +49,61 @@ export async function updateOrgStatus(
   return { ok: true };
 }
 
+/** Editable org quota limits (usage counters are system-managed). */
+export type OrgQuotaLimits = {
+  max_active_animals: number;
+  max_animal_cud_per_day: number;
+  max_image_uploads_per_day: number;
+  max_images_per_animal: number;
+  max_storage_bytes: number;
+};
+
+/**
+ * Raise or lower org quota limits (WP-13).
+ * Does not reset usage counters.
+ */
 export async function updateOrgQuota(
   orgId: string,
-  maxActiveAnimals: number
+  limits: OrgQuotaLimits
 ): Promise<AdminActionResult> {
   await requirePlatformStaff();
 
-  if (!Number.isFinite(maxActiveAnimals) || maxActiveAnimals < 1) {
-    return { ok: false, error: "Quota must be a positive number." };
+  const checks: [string, number, number][] = [
+    ["max_active_animals", limits.max_active_animals, 1],
+    ["max_animal_cud_per_day", limits.max_animal_cud_per_day, 1],
+    ["max_image_uploads_per_day", limits.max_image_uploads_per_day, 1],
+    ["max_images_per_animal", limits.max_images_per_animal, 1],
+    ["max_storage_bytes", limits.max_storage_bytes, 1024 * 1024], // ≥ 1 MB
+  ];
+  for (const [name, value, min] of checks) {
+    if (!Number.isFinite(value) || value < min) {
+      return { ok: false, error: `Invalid ${name}.` };
+    }
+  }
+  if (limits.max_images_per_animal > 20) {
+    return { ok: false, error: "Max images per animal cannot exceed 20." };
   }
 
   const supabase = await createClient();
   const { error } = await supabase
     .from("organization_quotas")
-    .update({ max_active_animals: maxActiveAnimals })
+    .update({
+      max_active_animals: Math.floor(limits.max_active_animals),
+      max_animal_cud_per_day: Math.floor(limits.max_animal_cud_per_day),
+      max_image_uploads_per_day: Math.floor(limits.max_image_uploads_per_day),
+      max_images_per_animal: Math.floor(limits.max_images_per_animal),
+      max_storage_bytes: Math.floor(limits.max_storage_bytes),
+    })
     .eq("org_id", orgId);
 
   if (error) {
+    logger.error("admin.quota_update_failed", { orgId }, error);
     return { ok: false, error: error.message };
   }
 
+  logger.info("admin.quota_updated", { orgId, ...limits });
   revalidatePath(`/admin/organizations/${orgId}`);
+  revalidatePath("/admin");
   return { ok: true };
 }
 
