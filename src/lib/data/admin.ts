@@ -135,3 +135,38 @@ export async function countPublishedAnimals(): Promise<number> {
     .is("deleted_at", null);
   return count ?? 0;
 }
+
+/** Day-one analytics counts by event_type (last N days) — WP-11 */
+export type AnalyticsSummary = {
+  event_type: string;
+  count: number;
+};
+
+export async function getAnalyticsSummary(days = 7): Promise<AnalyticsSummary[]> {
+  const supabase = await createClient();
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+  const sinceIso = since.toISOString();
+
+  // Fetch recent events and aggregate in process (no group-by RPC yet)
+  const { data, error } = await supabase
+    .from("analytics_events")
+    .select("event_type")
+    .gte("created_at", sinceIso)
+    .limit(5000);
+
+  if (error || !data) {
+    console.error("getAnalyticsSummary", error?.message);
+    return [];
+  }
+
+  const counts = new Map<string, number>();
+  for (const row of data) {
+    const t = row.event_type as string;
+    counts.set(t, (counts.get(t) ?? 0) + 1);
+  }
+
+  return Array.from(counts.entries())
+    .map(([event_type, count]) => ({ event_type, count }))
+    .sort((a, b) => b.count - a.count);
+}
