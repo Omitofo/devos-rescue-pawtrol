@@ -10,6 +10,7 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
 import { AnimalCard } from "@/components/AnimalCard";
 import { getActiveOrgBySlug } from "@/lib/data/organizations";
+import { trackEvent } from "@/lib/analytics/track";
 import { listOrgPublishedAnimals } from "@/lib/data/animals";
 
 type Params = Promise<{ slug: string }>;
@@ -19,6 +20,12 @@ export default async function OrgProfilePage({ params }: { params: Params }) {
   const org = await getActiveOrgBySlug(slug);
 
   if (!org) notFound();
+
+  // WP-11: organisation profile view
+  await trackEvent({
+    event_type: "org_view",
+    org_id: org.id,
+  });
 
   const animals = await listOrgPublishedAnimals(org.id);
   const location = [org.city, org.subdivision, org.country_code]
