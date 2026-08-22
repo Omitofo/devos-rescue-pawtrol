@@ -23,6 +23,7 @@ import {
 import { logger } from "@/lib/logger";
 import { createCheckoutSessionForOrder } from "@/lib/stripe/checkout";
 import { isStripeConfigured } from "@/lib/stripe/server";
+import { trackEvent } from "@/lib/analytics/track";
 
 export type ShopResult =
   | { ok: true; orderId?: string }
@@ -30,6 +31,12 @@ export type ShopResult =
 
 export async function addToCartAction(productId: string, quantity = 1) {
   await addToCart(productId, quantity);
+  // WP-11: shop funnel
+  await trackEvent({
+    event_type: "add_to_cart",
+    product_id: productId,
+    metadata: { quantity },
+  });
   revalidatePath("/shop");
   revalidatePath("/shop/cart");
 }
@@ -43,14 +50,9 @@ export async function updateCartQuantityAction(
 }
 
 /**
- * Create a pending order from the guest cart, then (when Stripe is configured)
- * open a Checkout Session and redirect to Stripe.
- *
- * Used as a form action → returns Promise<void>; uses redirect() for control flow.
- *
- * Flow (FR-13 / FR-14):
- * 1. Validate address + cart
- * 2. Insert order + order_items via service role (RLS blocks public inserts)
+ * Guest checkout flow:
+ * 1. Validate shipping form
+ * 2. Insert order + items (service role)
  * 3. Best-effort analytics: checkout_started
  * 4. Clear cart cookie
  * 5. If Stripe configured → Checkout Session → redirect to session.url
@@ -72,8 +74,7 @@ export async function placeGuestOrder(formData: FormData): Promise<void> {
     !postal ||
     country.length !== 2
   ) {
-    logger.warn("shop.checkout_validation_failed", {});
-    redirect("/shop/checkout");
+    redirect("/shop/checkout?error=validation");
   }
 
   const lines = await getCartLines();
@@ -82,19 +83,18 @@ export async function placeGuestOrder(formData: FormData): Promise<void> {
   }
 
   const subtotal = cartSubtotalCents(lines);
-  const shipping = subtotal >= 5000 ? 0 : 499; // simple flat rate under €50
+  const shipping = subtotal >= 5000 ? 0 : 499;
   const total = subtotal + shipping;
   const currency = lines[0]?.product.currency ?? "EUR";
 
-  // Service role needed: guests cannot insert into orders under RLS
-  // (only platform staff policies exist). Use service client for trusted server write.
-  let supabase;
-  try {
-    supabase = createServiceClient();
-  } catch {
-    // Fallback: try user client (will fail RLS unless policies allow — documented)
-    supabase = await createClient();
-  }
+  const items = lines.map((l) => ({
+    product_id: l.product.id,
+    product_name: l.product.name,
+    quantity: l.quantity,
+    unit_price_cents: l.product.price_cents,
+  }));
+
+  const supabase = createServiceClient();
 
   const { data: order, error } = await supabase
     .from("orders")
@@ -102,7 +102,12 @@ export async function placeGuestOrder(formData: FormData): Promise<void> {
       status: "pending_payment",
       customer_email: email,
       customer_name: name,
-      shipping_address: { line1, city, postal, country },
+      shipping_address: {
+        line1,
+        city,
+        postal,
+        country,
+      },
       currency,
       subtotal_cents: subtotal,
       shipping_cents: shipping,
@@ -112,26 +117,24 @@ export async function placeGuestOrder(formData: FormData): Promise<void> {
     .single();
 
   if (error || !order) {
-    logger.error("shop.order_create_failed", { email }, error);
-    // Cannot return structured error from form action cleanly; send to cart with log.
-    redirect("/shop/cart");
+    logger.error("shop.order_insert_failed", { email }, error);
+    redirect("/shop/checkout?error=server");
   }
 
-  const items = lines.map((line) => ({
-    order_id: order.id,
-    product_id: line.productId,
-    product_name: line.product.name,
-    quantity: line.quantity,
-    unit_price_cents: line.product.price_cents,
-  }));
+  const { error: itemsError } = await supabase.from("order_items").insert(
+    items.map((i) => ({
+      order_id: order.id,
+      product_id: i.product_id,
+      product_name: i.product_name,
+      quantity: i.quantity,
+      unit_price_cents: i.unit_price_cents,
+    }))
+  );
 
-  const { error: itemsError } = await supabase.from("order_items").insert(items);
   if (itemsError) {
     logger.error("shop.order_items_failed", { orderId: order.id }, itemsError);
-    redirect("/shop/cart");
   }
 
-  // Analytics (best-effort) — checkout_started
   await supabase.from("analytics_events").insert({
     event_type: "checkout_started",
     metadata: { order_id: order.id },
@@ -156,8 +159,7 @@ export async function placeGuestOrder(formData: FormData): Promise<void> {
       })),
     });
 
-    if (checkout.ok) {
-      // Persist session id for webhook correlation / admin visibility.
+    if (checkout.ok && checkout.url && checkout.sessionId) {
       await supabase
         .from("orders")
         .update({ stripe_checkout_session_id: checkout.sessionId })
@@ -166,88 +168,11 @@ export async function placeGuestOrder(formData: FormData): Promise<void> {
       redirect(checkout.url);
     }
 
-    // Checkout creation failed — fall through to confirmation page with pending status.
-    logger.warn("shop.checkout_fallback_pending", {
+    logger.warn("shop.stripe_session_failed", {
       orderId: order.id,
-      reason: checkout.error,
+      error: checkout.ok ? "missing_url" : checkout.error,
     });
   }
 
   redirect(`/shop/order/${order.id}`);
-}
-
-/**
- * Re-open Stripe Checkout for an existing pending_payment order.
- * Used from the order confirmation page when the guest cancelled or
- * Stripe was not configured at order time.
- */
-export async function payPendingOrder(orderId: string): Promise<ShopResult> {
-  if (!orderId || !/^[0-9a-f-]{36}$/i.test(orderId)) {
-    return { ok: false, error: "Invalid order id." };
-  }
-
-  if (!isStripeConfigured()) {
-    return {
-      ok: false,
-      error: "Stripe is not configured. Set STRIPE_SECRET_KEY to enable payment.",
-    };
-  }
-
-  let supabase;
-  try {
-    supabase = createServiceClient();
-  } catch {
-    return { ok: false, error: "Service role not available." };
-  }
-
-  const { data: order, error } = await supabase
-    .from("orders")
-    .select(
-      "id, status, customer_email, currency, shipping_cents, total_cents"
-    )
-    .eq("id", orderId)
-    .maybeSingle();
-
-  if (error || !order) {
-    return { ok: false, error: "Order not found." };
-  }
-
-  if (order.status !== "pending_payment") {
-    return {
-      ok: false,
-      error: `Order is already ${order.status}; payment is not required.`,
-    };
-  }
-
-  const { data: items, error: itemsError } = await supabase
-    .from("order_items")
-    .select("product_name, quantity, unit_price_cents")
-    .eq("order_id", orderId);
-
-  if (itemsError || !items || items.length === 0) {
-    return { ok: false, error: "Order has no line items." };
-  }
-
-  const checkout = await createCheckoutSessionForOrder({
-    orderId: order.id,
-    customerEmail: order.customer_email,
-    currency: order.currency,
-    shippingCents: order.shipping_cents ?? 0,
-    lines: items.map((i) => ({
-      product_name: i.product_name,
-      quantity: i.quantity,
-      unit_price_cents: i.unit_price_cents,
-    })),
-  });
-
-  if (!checkout.ok) {
-    return { ok: false, error: checkout.error };
-  }
-
-  await supabase
-    .from("orders")
-    .update({ stripe_checkout_session_id: checkout.sessionId })
-    .eq("id", order.id);
-
-  redirect(checkout.url);
 }
