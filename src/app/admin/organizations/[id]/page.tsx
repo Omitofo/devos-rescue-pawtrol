@@ -1,5 +1,5 @@
 /**
- * Admin org detail — status + quotas (WP-07).
+ * Admin org detail — status + quotas (WP-07 + WP-13 usage visibility).
  */
 
 import Link from "next/link";
@@ -41,9 +41,27 @@ export default async function AdminOrgPage({ params }: { params: Params }) {
       {quota && (
         <section className="space-y-3 rounded-xl border border-border bg-surface-elevated p-5">
           <h2 className="font-semibold text-primary">Quotas</h2>
-          <p className="text-sm text-muted-foreground">
-            Active animals: {quota.active_animals_count} / {quota.max_active_animals}
-          </p>
+          <ul className="space-y-1 text-sm text-muted-foreground">
+            <li>
+              Active animals: {quota.active_animals_count} / {quota.max_active_animals}
+            </li>
+            <li>
+              Edits today: {quota.animal_cud_today ?? 0} /{" "}
+              {quota.max_animal_cud_per_day ?? "—"}
+            </li>
+            <li>
+              Uploads today: {quota.image_uploads_today ?? 0} /{" "}
+              {quota.max_image_uploads_per_day ?? "—"}
+            </li>
+            <li>
+              Storage:{" "}
+              {(quota.storage_bytes_used / 1024 / 1024).toFixed(1)} /{" "}
+              {(quota.max_storage_bytes / 1024 / 1024).toFixed(1)} MB
+            </li>
+            <li>
+              Max images per animal: {quota.max_images_per_animal ?? 8}
+            </li>
+          </ul>
           <QuotaForm orgId={org.id} maxActiveAnimals={quota.max_active_animals} />
         </section>
       )}

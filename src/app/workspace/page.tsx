@@ -1,18 +1,24 @@
 /**
- * Org workspace home — list animals (WP-06 / J-04).
+ * Org workspace home — list animals (WP-06 / J-04) + quota feedback (WP-13).
  */
 
 import Link from "next/link";
 import { requireOrgMember } from "@/lib/auth/session";
 import { hasElevatedWindow, elevatedRemainingSeconds } from "@/lib/auth/elevated";
 import { listOrgAnimals } from "@/lib/data/workspace";
+import { getQuotaSnapshot } from "@/lib/quota/service";
 import { ElevatedReauthPanel } from "@/components/workspace/ElevatedReauthPanel";
+
+function formatMb(bytes: number): string {
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
 
 export default async function WorkspacePage() {
   const user = await requireOrgMember();
   const animals = await listOrgAnimals(user.orgId!);
   const elevated = await hasElevatedWindow();
   const remaining = await elevatedRemainingSeconds();
+  const quota = await getQuotaSnapshot(user.orgId!);
 
   return (
     <div className="space-y-6">
@@ -40,6 +46,31 @@ export default async function WorkspacePage() {
         <p className="text-xs text-muted-foreground">
           Elevated window active (~{Math.ceil(remaining / 60)} minutes left).
         </p>
+      )}
+
+      {quota && (
+        <div className="grid gap-3 rounded-xl border border-border bg-surface-elevated p-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+          <QuotaStat
+            label="Active animals"
+            value={`${quota.active_animals_count} / ${quota.max_active_animals}`}
+            warn={quota.active_animals_count >= quota.max_active_animals}
+          />
+          <QuotaStat
+            label="Edits today"
+            value={`${quota.animal_cud_today} / ${quota.max_animal_cud_per_day}`}
+            warn={quota.animal_cud_today >= quota.max_animal_cud_per_day}
+          />
+          <QuotaStat
+            label="Uploads today"
+            value={`${quota.image_uploads_today} / ${quota.max_image_uploads_per_day}`}
+            warn={quota.image_uploads_today >= quota.max_image_uploads_per_day}
+          />
+          <QuotaStat
+            label="Storage"
+            value={`${formatMb(quota.storage_bytes_used)} / ${formatMb(quota.max_storage_bytes)}`}
+            warn={quota.storage_bytes_used >= quota.max_storage_bytes * 0.9}
+          />
+        </div>
       )}
 
       {animals.length === 0 ? (
@@ -81,6 +112,31 @@ export default async function WorkspacePage() {
           </table>
         </div>
       )}
+    </div>
+  );
+}
+
+function QuotaStat({
+  label,
+  value,
+  warn,
+}: {
+  label: string;
+  value: string;
+  warn?: boolean;
+}) {
+  return (
+    <div>
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p
+        className={
+          warn
+            ? "font-medium text-amber-700 dark:text-amber-400"
+            : "font-medium text-primary"
+        }
+      >
+        {value}
+      </p>
     </div>
   );
 }
