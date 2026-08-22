@@ -9,16 +9,20 @@ import {
   listRecentInterest,
   countPublishedAnimals,
   getAnalyticsSummary,
+  countOrdersByStatus,
 } from "@/lib/data/admin";
 
 export default async function AdminDashboardPage() {
-  const [orgs, leads, interest, publishedCount, analytics] = await Promise.all([
+  const [orgs, leads, interest, publishedCount, analytics, orderCounts] = await Promise.all([
     listAllOrganizations(),
     listLeads(10),
     listRecentInterest(10),
     countPublishedAnimals(),
     getAnalyticsSummary(7),
+    countOrdersByStatus(),
   ]);
+  const paidOrders = orderCounts["paid"] ?? 0;
+  const pendingOrders = orderCounts["pending_payment"] ?? 0;
 
   return (
     <div className="space-y-10">
@@ -29,21 +33,31 @@ export default async function AdminDashboardPage() {
             Organisations, leads, interest CTAs, and day-one analytics.
           </p>
         </div>
-        <Link
-          href="/admin/organizations/new"
-          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-        >
-          Provision organisation
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/admin/orders"
+            className="rounded-md border border-border px-4 py-2 text-sm font-medium text-primary"
+          >
+            Orders
+          </Link>
+          <Link
+            href="/admin/organizations/new"
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+          >
+            Provision organisation
+          </Link>
+        </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Stat label="Organisations" value={orgs.length} />
         <Stat label="Published animals" value={publishedCount} />
         <Stat
           label="Open leads"
           value={leads.filter((l) => l.status === "new").length}
         />
+        <Stat label="Paid orders" value={paidOrders} />
+        <Stat label="Pending payment" value={pendingOrders} />
       </div>
 
       <section className="space-y-3">

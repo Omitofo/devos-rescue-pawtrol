@@ -8,7 +8,7 @@ International discovery platform for rescued animals from verified rescue organi
 
 ---
 
-## Work package status (2026-08-22)
+## Work package status (2026-08-23)
 
 | WP | Description | Status | Notes |
 |----|-------------|--------|-------|
@@ -24,6 +24,7 @@ International discovery platform for rescued animals from verified rescue organi
 | **WP-13** | Quota & Rate Guard enforcement | ✅ | Atomic RPCs on animal CUD + media; workspace usage panel |
 | **WP-12** | Public lead / contact page | ✅ | `/contact` → `leads`; Join as rescue + general |
 | **WP-11** | Interest & product analytics | ✅ | Views, search, cart; admin 7-day summary |
+| **Admin orders** | Order list + status | ✅ | `/admin/orders` + detail |
 | **J-05** | Org profile / Contact / CTA edit | ✅ | `/workspace/profile` |
 | WP-10+ | POD, deeper analytics, i18n, etc. | ⏳ | See “Next” below |
 
@@ -98,6 +99,7 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 | `/workspace/profile` | Org public profile / CTA / contact |
 | `/workspace/animals/new`, `.../[id]/edit` | Create/edit + **photos** |
 | `/admin` | Dashboard + **analytics 7-day summary** |
+| `/admin/orders`, `/admin/orders/[id]` | Order list + detail / status |
 | `/admin/organizations/new` | Provision org + optional user |
 | `/admin/organizations/[id]` | Status + quotas |
 | `/api/health` | Health check |
@@ -143,15 +145,15 @@ Three orgs (ES / PH / VE), ~10 animals with cover images, 2 products, 1 lead. Fi
 8. **Stripe (WP-09):** Checkout Session created after order insert; webhook marks `paid` and writes `order_completed` analytics. POD fulfilment is WP-10.
 9. **Quotas (WP-13):** SECURITY DEFINER RPCs (`quota_consume_animal_cud`, `quota_reserve_active_animal`, `quota_consume_image_upload`, …). Apply migration `20260822000000_wp13_quota_enforcement.sql`.
 10. **Leads (WP-12):** Public `/contact` inserts into `leads` (RLS allows anon INSERT). Admins triage on `/admin`.
-11. **Analytics (WP-11):** `trackEvent` in `src/lib/analytics/track.ts`. animal_view / org_view / product_view / search_filter / add_to_cart + existing interest_cta / checkout_started / order_completed. Admin dashboard shows 7-day counts.
+11. **Admin orders:** `/admin/orders` lists guest shop orders; detail page can update status (pre-POD ops).
+12. **Analytics (WP-11):** `trackEvent` in `src/lib/analytics/track.ts`. animal_view / org_view / product_view / search_filter / add_to_cart + existing interest_cta / checkout_started / order_completed. Admin dashboard shows 7-day counts.
 
 ---
 
 ## Suggested next work
 
 1. **WP-10 POD adapter** — fulfilment after `paid` (Gelato → Printify → Printful)
-2. **Admin order list** — visibility into paid / pending orders
-3. **Admin quota form** — raise daily CUD / storage limits (max_active already editable)
+2. **Admin quota form** — raise daily CUD / storage limits (max_active already editable)
 
 ---
 
