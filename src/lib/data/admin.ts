@@ -148,7 +148,6 @@ export async function getAnalyticsSummary(days = 7): Promise<AnalyticsSummary[]>
   since.setDate(since.getDate() - days);
   const sinceIso = since.toISOString();
 
-  // Fetch recent events and aggregate in process (no group-by RPC yet)
   const { data, error } = await supabase
     .from("analytics_events")
     .select("event_type")
@@ -169,4 +168,107 @@ export async function getAnalyticsSummary(days = 7): Promise<AnalyticsSummary[]>
   return Array.from(counts.entries())
     .map(([event_type, count]) => ({ event_type, count }))
     .sort((a, b) => b.count - a.count);
+}
+
+/** Shop order row for admin list — ops visibility after WP-08/09 */
+export type AdminOrder = {
+  id: string;
+  status: string;
+  customer_email: string;
+  customer_name: string | null;
+  currency: string;
+  total_cents: number;
+  stripe_checkout_session_id: string | null;
+  pod_provider: string | null;
+  pod_order_id: string | null;
+  pod_status: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AdminOrderItem = {
+  id: string;
+  product_id: string | null;
+  product_name: string;
+  quantity: number;
+  unit_price_cents: number;
+};
+
+export type AdminOrderDetail = AdminOrder & {
+  shipping_address: Record<string, unknown> | null;
+  subtotal_cents: number;
+  shipping_cents: number;
+  stripe_payment_intent_id: string | null;
+  metadata: Record<string, unknown> | null;
+  items: AdminOrderItem[];
+};
+
+export async function listOrders(opts?: {
+  status?: string;
+  limit?: number;
+}): Promise<AdminOrder[]> {
+  const supabase = await createClient();
+  let q = supabase
+    .from("orders")
+    .select(
+      "id, status, customer_email, customer_name, currency, total_cents, stripe_checkout_session_id, pod_provider, pod_order_id, pod_status, created_at, updated_at"
+    )
+    .order("created_at", { ascending: false })
+    .limit(opts?.limit ?? 50);
+
+  if (opts?.status) {
+    q = q.eq("status", opts.status);
+  }
+
+  const { data, error } = await q;
+  if (error) {
+    console.error("listOrders", error.message);
+    return [];
+  }
+  return (data ?? []) as AdminOrder[];
+}
+
+export async function getOrderAdmin(
+  id: string
+): Promise<AdminOrderDetail | null> {
+  const supabase = await createClient();
+  const { data: order, error } = await supabase
+    .from("orders")
+    .select(
+      `id, status, customer_email, customer_name, currency, total_cents,
+       subtotal_cents, shipping_cents, shipping_address,
+       stripe_checkout_session_id, stripe_payment_intent_id,
+       pod_provider, pod_order_id, pod_status, metadata,
+       created_at, updated_at`
+    )
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error || !order) return null;
+
+  const { data: items } = await supabase
+    .from("order_items")
+    .select("id, product_id, product_name, quantity, unit_price_cents")
+    .eq("order_id", id);
+
+  return {
+    ...(order as Omit<AdminOrderDetail, "items">),
+    items: (items ?? []) as AdminOrderItem[],
+  };
+}
+
+export async function countOrdersByStatus(): Promise<Record<string, number>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("orders")
+    .select("status")
+    .limit(2000);
+
+  if (error || !data) return {};
+  const counts: Record<string, number> = {};
+  for (const row of data) {
+    const s = row.status as string;
+    counts[s] = (counts[s] ?? 0) + 1;
+  }
+  return counts;
 }
