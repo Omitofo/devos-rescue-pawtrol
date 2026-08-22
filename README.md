@@ -8,7 +8,7 @@ International discovery platform for rescued animals from verified rescue organi
 
 ---
 
-## Work package status (2026-08-21)
+## Work package status (2026-08-22)
 
 | WP | Description | Status | Notes |
 |----|-------------|--------|-------|
@@ -19,9 +19,10 @@ International discovery platform for rescued animals from verified rescue organi
 | **WP-05** | Public discovery | ✅ | Grid, filters, detail, interest CTA |
 | **WP-06** | Org workspace (animals) | ✅ | Create/edit + elevated gate |
 | **WP-07** | Admin console + **provision org/user** | ✅ | `/admin/organizations/new` |
-| **WP-08** | Guest shop | ✅ | Cart + checkout → `pending_payment` (Stripe deferred) |
+| **WP-08** | Guest shop | ✅ | Cart + checkout → `pending_payment` |
+| **WP-09** | Checkout & Stripe payments | ✅ | Checkout Session + webhook → `paid`; wallets via Stripe |
 | **J-05** | Org profile / Contact / CTA edit | ✅ | `/workspace/profile` |
-| WP-09+ | Stripe, POD, deeper analytics, i18n, etc. | ⏳ | See “Next” below |
+| WP-10+ | POD, deeper analytics, i18n, quotas, etc. | ⏳ | See “Next” below |
 
 **Working style:** one WP at a time; heavy code comments for fresh AI/human context; push to `main`.
 
@@ -33,6 +34,7 @@ International discovery platform for rescued animals from verified rescue organi
 - **TypeScript** strict
 - **Tailwind CSS** + CSS variable design tokens
 - **Supabase** — Postgres + Auth + Storage + RLS only backend
+- **Stripe** — Checkout Session (hosted) + webhooks (WP-09)
 
 ---
 
@@ -51,6 +53,12 @@ npm run dev
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=     # server only — orders + admin provisioning
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+
+# WP-09 Stripe (optional locally — without keys, orders stay pending_payment)
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 ```
 
 **NFR-02:** never put the service role in `NEXT_PUBLIC_*` or client bundles.
@@ -62,6 +70,13 @@ SUPABASE_SERVICE_ROLE_KEY=     # server only — orders + admin provisioning
 
 Free-tier **email OTP is rate-limited**; prefer **org password login** for local work.
 
+### Stripe local webhook
+
+```bash
+stripe listen --forward-to localhost:3000/api/webhooks/stripe
+# paste the whsec_… into STRIPE_WEBHOOK_SECRET
+```
+
 ---
 
 ## Main routes
@@ -72,6 +87,7 @@ Free-tier **email OTP is rate-limited**; prefer **org password login** for local
 | `/animals/[id]` | Animal detail + interest CTA |
 | `/organizations/[slug]` | Org profile + Contact `#contact` |
 | `/shop`, `/shop/[slug]`, `/shop/cart`, `/shop/checkout` | Guest shop |
+| `/shop/order/[id]` | Order status + Pay with Stripe |
 | `/auth/login` | Org user (password or OTP) → `/workspace` |
 | `/auth/admin/login` | Platform staff → `/admin` |
 | `/workspace` | Org animals |
@@ -81,6 +97,7 @@ Free-tier **email OTP is rate-limited**; prefer **org password login** for local
 | `/admin/organizations/new` | Provision org + optional user |
 | `/admin/organizations/[id]` | Status + quotas |
 | `/api/health` | Health check |
+| `/api/webhooks/stripe` | Stripe webhook (signature verified) |
 
 ---
 
@@ -112,23 +129,24 @@ Three orgs (ES / PH / VE), ~10 animals with cover images, 2 products, 1 lead. Fi
 
 ## Important implementation notes (for future sessions)
 
-1. **Proxy not middleware** — Next 16 uses `src/proxy.ts` + `export function proxy`.
+1. **Proxy not middleware** — Next 16 uses `src/proxy.ts` + `export function proxy`. Matcher excludes `/api/webhooks`.
 2. **JSON operators in SQL** must be ASCII `->` / `->>` (not Unicode arrows).
 3. **Do not DELETE seed orgs** referenced by `profiles` (check constraint `org_user` requires `org_id`). Upsert orgs instead.
 4. **Orders + Auth admin APIs** need **service role** on the server.
 5. **Shop** is navigationally separate from discovery; same design tokens.
 6. **Interest CTA** writes `interest_events` then navigates to org `#contact` (no platform message form).
 7. **Storage path:** `{org_id}/{animal_id}/{uuid}.ext` in bucket `animal-media`.
+8. **Stripe (WP-09):** Checkout Session created after order insert; webhook marks `paid` and writes `order_completed` analytics. POD fulfilment is WP-10.
 
 ---
 
 ## Suggested next work
 
-1. **Stripe** — PaymentIntent / Checkout for `pending_payment` orders  
-2. **WP-11 analytics** — animal/org view + search events  
-3. **Public lead / contact page** — write to `leads`  
-4. **POD adapter** — fulfilment after paid  
-5. **Quota enforcement** on animal CUD (counters already on `organization_quotas`)
+1. **WP-10 POD adapter** — fulfilment after `paid` (Gelato → Printify → Printful)
+2. **WP-11 analytics** — animal/org view + search events (write path partially used)
+3. **WP-12 Public lead / contact page** — write to `leads`
+4. **WP-13 Quota enforcement** on animal CUD (counters already on `organization_quotas`)
+5. **Admin order list** — visibility into paid / pending orders
 
 ---
 
