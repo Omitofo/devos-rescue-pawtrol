@@ -2,7 +2,11 @@
  * Discovery filters — WP-05 (J-01).
  *
  * GET-based form so results are shareable / crawlable (SSR).
- * Progressive disclosure on mobile via details/summary.
+ * Mobile: collapsible <details> (summary visible).
+ * Desktop (sm+): filters always visible — summary hidden, panel forced open.
+ *
+ * NOTE: Tailwind `sm:open` does NOT set the HTML open attribute. We must use
+ * the real `open` prop so the filter grid is shown when the summary is hidden.
  */
 
 import type { AnimalFilters as Filters } from "@/lib/data/animals";
@@ -22,7 +26,7 @@ export function AnimalFilters({ current }: { current: Filters }) {
             type="search"
             name="q"
             defaultValue={current.q ?? ""}
-            placeholder="Name, breed, city…"
+            placeholder="Name, breed, city\u2026"
             className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-accent-2"
           />
         </label>
@@ -34,8 +38,13 @@ export function AnimalFilters({ current }: { current: Filters }) {
         </button>
       </div>
 
-      <details className="sm:open group rounded-lg border border-border bg-surface-elevated p-3 sm:border-0 sm:bg-transparent sm:p-0">
-        <summary className="cursor-pointer text-sm font-medium text-primary sm:hidden">
+      {/* `open` keeps the panel expanded by default so desktop (where summary is
+          hidden) still shows species/age/sex/size. Mobile can still collapse. */}
+      <details
+        open
+        className="group rounded-lg border border-border bg-surface-elevated p-3 sm:border-0 sm:bg-transparent sm:p-0"
+      >
+        <summary className="cursor-pointer list-none text-sm font-medium text-primary sm:hidden [&::-webkit-details-marker]:hidden">
           Filters
         </summary>
         <div className="mt-3 grid grid-cols-2 gap-3 sm:mt-0 sm:grid-cols-4">
@@ -76,7 +85,7 @@ function FilterSelect({
       <select
         name={name}
         defaultValue={value ?? ""}
-        className="w-full rounded-md border border-border bg-surface px-2 py-2 text-sm outline-none focus:ring-2 focus:ring-accent-2"
+        className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-accent-2"
       >
         <option value="">Any</option>
         {options.map((o) => (

@@ -31,14 +31,19 @@ export default async function HomePage({
 
   const animals = await listPublishedAnimals(filters);
 
-  // WP-11: search / filter usage when any filter is active
+  // WP-11: filter usage metric — fire when any search/filter is applied
+  // Visible on /admin under analytics as "search filter" (7-day count).
   const activeFilters = Object.fromEntries(
     Object.entries(filters).filter(([, v]) => v != null && v !== "")
   );
   if (Object.keys(activeFilters).length > 0) {
     await trackEvent({
       event_type: "search_filter",
-      metadata: activeFilters,
+      metadata: {
+        ...activeFilters,
+        result_count: animals.length,
+        filter_keys: Object.keys(activeFilters),
+      },
     });
   }
 
@@ -46,7 +51,6 @@ export default async function HomePage({
     <>
       <SiteHeader />
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        {/* Hero */}
         <section className="mb-10 space-y-3">
           <h1 className="text-3xl font-semibold tracking-tight text-primary sm:text-4xl">
             Find a rescued friend
@@ -58,12 +62,10 @@ export default async function HomePage({
           </p>
         </section>
 
-        {/* Filters */}
         <section className="mb-8">
           <AnimalFilters current={filters} />
         </section>
 
-        {/* Grid */}
         <section>
           {animals.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border bg-surface-elevated px-6 py-16 text-center">
