@@ -9,6 +9,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { AnimalCard } from "@/components/AnimalCard";
 import { AnimalFilters } from "@/components/AnimalFilters";
 import { listPublishedAnimals, type AnimalFilters as Filters } from "@/lib/data/animals";
+import { trackEvent } from "@/lib/analytics/track";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -29,6 +30,17 @@ export default async function HomePage({
   };
 
   const animals = await listPublishedAnimals(filters);
+
+  // WP-11: search / filter usage when any filter is active
+  const activeFilters = Object.fromEntries(
+    Object.entries(filters).filter(([, v]) => v != null && v !== "")
+  );
+  if (Object.keys(activeFilters).length > 0) {
+    await trackEvent({
+      event_type: "search_filter",
+      metadata: activeFilters,
+    });
+  }
 
   return (
     <>
