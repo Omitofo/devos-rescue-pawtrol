@@ -1,8 +1,8 @@
 "use server";
 
 /**
- * Admin mutations — WP-07.
- * Platform staff only. Status / quota changes are privileged writes.
+ * Admin mutations — WP-07 / WP-10.
+ * Platform staff only. Status / quota / POD are privileged writes.
  */
 
 import { revalidatePath } from "next/cache";
@@ -58,10 +58,6 @@ export type OrgQuotaLimits = {
   max_storage_bytes: number;
 };
 
-/**
- * Raise or lower org quota limits (WP-13).
- * Does not reset usage counters.
- */
 export async function updateOrgQuota(
   orgId: string,
   limits: OrgQuotaLimits
@@ -73,7 +69,7 @@ export async function updateOrgQuota(
     ["max_animal_cud_per_day", limits.max_animal_cud_per_day, 1],
     ["max_image_uploads_per_day", limits.max_image_uploads_per_day, 1],
     ["max_images_per_animal", limits.max_images_per_animal, 1],
-    ["max_storage_bytes", limits.max_storage_bytes, 1024 * 1024], // ≥ 1 MB
+    ["max_storage_bytes", limits.max_storage_bytes, 1024 * 1024],
   ];
   for (const [name, value, min] of checks) {
     if (!Number.isFinite(value) || value < min) {
@@ -140,10 +136,6 @@ const ORDER_STATUSES = [
   "refunded",
 ] as const;
 
-/**
- * Manual order status transition (ops / pre-POD).
- * Stripe webhook owns pending_payment → paid; staff may advance fulfilment.
- */
 export async function updateOrderStatus(
   orderId: string,
   status: string
@@ -170,4 +162,30 @@ export async function updateOrderStatus(
   revalidatePath("/admin/orders");
   revalidatePath(`/admin/orders/${orderId}`);
   return { ok: true };
+}
+
+/**
+ * Admin-triggered POD fulfilment (WP-10).
+ * Order must be paid; uses active provider (or mock).
+ */
+export async function submitOrderToPodAction(
+  orderId: string
+): Promise<AdminActionResult & { podOrderId?: string; provider?: string }> {
+  await requirePlatformStaff();
+
+  const { submitOrderToPod } = await import("@/lib/pod/submit");
+  const result = await submitOrderToPod(orderId);
+
+  if (!result.ok) {
+    return { ok: false, error: result.error };
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${orderId}`);
+  return {
+    ok: true,
+    podOrderId: result.podOrderId,
+    provider: result.provider,
+  };
 }
