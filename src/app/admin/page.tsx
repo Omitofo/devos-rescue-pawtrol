@@ -8,14 +8,16 @@ import {
   listLeads,
   listRecentInterest,
   countPublishedAnimals,
+  getAnalyticsSummary,
 } from "@/lib/data/admin";
 
 export default async function AdminDashboardPage() {
-  const [orgs, leads, interest, publishedCount] = await Promise.all([
+  const [orgs, leads, interest, publishedCount, analytics] = await Promise.all([
     listAllOrganizations(),
     listLeads(10),
     listRecentInterest(10),
     countPublishedAnimals(),
+    getAnalyticsSummary(7),
   ]);
 
   return (
@@ -24,7 +26,7 @@ export default async function AdminDashboardPage() {
         <div>
           <h1 className="text-2xl font-semibold text-primary">Dashboard</h1>
           <p className="text-sm text-muted-foreground">
-            Organisations, leads, and day-one interest signals.
+            Organisations, leads, interest CTAs, and day-one analytics.
           </p>
         </div>
         <Link
@@ -43,6 +45,33 @@ export default async function AdminDashboardPage() {
           value={leads.filter((l) => l.status === "new").length}
         />
       </div>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold text-primary">
+          Analytics (last 7 days)
+        </h2>
+        {analytics.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No events yet. Views, searches, cart, and checkout will appear here.
+          </p>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {analytics.map((row) => (
+              <div
+                key={row.event_type}
+                className="rounded-xl border border-border bg-surface-elevated px-4 py-4"
+              >
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {row.event_type.replaceAll("_", " ")}
+                </p>
+                <p className="mt-1 text-2xl font-semibold text-primary">
+                  {row.count}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-primary">Organisations</h2>
@@ -125,7 +154,7 @@ export default async function AdminDashboardPage() {
                   <span className="font-mono text-xs">
                     {ev.animal_id?.slice(0, 8)}…
                   </span>
-                  {" · "}
+                  {" \u00b7 "}
                   {new Date(ev.created_at).toLocaleString()}
                 </li>
               ))}
