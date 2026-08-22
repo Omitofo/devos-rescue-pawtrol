@@ -1,14 +1,15 @@
 "use server";
 
 /**
- * Media service — WP-04.
+ * Media service — WP-04 + WP-13.
  *
  * Flow:
- * 1. Client requests upload slot (checks elevated window + quotas).
+ * 1. Client requests upload slot (checks elevated window + org quotas).
  * 2. Client uploads bytes to Storage with the returned path (authenticated).
  * 3. Client registers metadata row via registerAnimalMedia.
  *
- * Public URLs use the public bucket URL for MVP simplicity.
+ * WP-13: daily image uploads, org storage budget, per-animal image cap,
+ * and max file size come from organization_quotas (via RPC).
  */
 
 import { revalidatePath } from "next/cache";
@@ -16,6 +17,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireOrgMember } from "@/lib/auth/session";
 import { requireElevatedWindow } from "@/lib/auth/elevated";
 import { logger } from "@/lib/logger";
+import { consumeImageUpload, releaseStorage } from "@/lib/quota/service";
 import {
   MEDIA_BUCKET,
   MAX_IMAGES_PER_ANIMAL,
@@ -60,7 +62,10 @@ export async function listAnimalMedia(animalId: string): Promise<MediaRow[]> {
 }
 
 /**
- * Prepare an upload: validates quotas and returns the storage path to use.
+ * Prepare an upload: validates MIME, per-animal count, and org quotas
+ * (daily uploads + storage + max file size). Consumes quota on success so
+ * abandoned uploads still count toward the daily limit (acceptable trade-off
+ * for atomic enforcement without a two-phase hold).
  */
 export async function prepareAnimalUpload(
   animalId: string,
@@ -80,13 +85,19 @@ export async function prepareAnimalUpload(
   if (!ALLOWED_MIME.includes(contentType as (typeof ALLOWED_MIME)[number])) {
     return { ok: false, error: "Only JPEG, PNG, WebP, or GIF images are allowed." };
   }
-  if (sizeBytes <= 0 || sizeBytes > MAX_IMAGE_BYTES) {
-    return { ok: false, error: `Image must be under ${MAX_IMAGE_BYTES / 1024 / 1024} MB.` };
+  if (sizeBytes <= 0) {
+    return { ok: false, error: "Invalid image size." };
+  }
+  // Hard ceiling from constants; org row may be tighter (checked in RPC).
+  if (sizeBytes > MAX_IMAGE_BYTES) {
+    return {
+      ok: false,
+      error: `Image must be under ${MAX_IMAGE_BYTES / 1024 / 1024} MB.`,
+    };
   }
 
   const supabase = await createClient();
 
-  // Own the animal
   const { data: animal } = await supabase
     .from("animals")
     .select("id, org_id")
@@ -99,16 +110,29 @@ export async function prepareAnimalUpload(
     return { ok: false, error: "Animal not found." };
   }
 
+  // WP-13: org daily upload + storage + max_image_bytes
+  const quota = await consumeImageUpload(user.orgId!, sizeBytes);
+  if (!quota.ok) {
+    return { ok: false, error: quota.error };
+  }
+
+  const maxPerAnimal =
+    typeof quota.max_images_per_animal === "number"
+      ? (quota.max_images_per_animal as number)
+      : MAX_IMAGES_PER_ANIMAL;
+
   const { count } = await supabase
     .from("animal_media")
     .select("id", { count: "exact", head: true })
     .eq("animal_id", animalId)
     .is("deleted_at", null);
 
-  if ((count ?? 0) >= MAX_IMAGES_PER_ANIMAL) {
+  if ((count ?? 0) >= maxPerAnimal) {
+    // Roll back the storage/daily consumption we just took
+    await releaseStorage(user.orgId!, sizeBytes);
     return {
       ok: false,
-      error: `Maximum of ${MAX_IMAGES_PER_ANIMAL} images per animal.`,
+      error: `Maximum of ${maxPerAnimal} images per animal.`,
     };
   }
 
@@ -128,6 +152,7 @@ export async function prepareAnimalUpload(
 
 /**
  * After a successful Storage upload, register metadata and optionally set cover.
+ * Quota was already consumed in prepareAnimalUpload.
  */
 export async function registerAnimalMedia(input: {
   animalId: string;
@@ -144,7 +169,6 @@ export async function registerAnimalMedia(input: {
     return { ok: false, error: "Elevated re-authentication required." };
   }
 
-  // Path must start with this org
   if (!input.storagePath.startsWith(`${user.orgId}/`)) {
     return { ok: false, error: "Invalid storage path." };
   }
@@ -221,7 +245,7 @@ export async function deleteAnimalMedia(
 
   const { data: row } = await supabase
     .from("animal_media")
-    .select("id, animal_id, storage_path, org_id")
+    .select("id, animal_id, storage_path, org_id, size_bytes")
     .eq("id", mediaId)
     .eq("org_id", user.orgId!)
     .is("deleted_at", null)
@@ -231,16 +255,18 @@ export async function deleteAnimalMedia(
     return { ok: false, error: "Media not found." };
   }
 
-  // Soft-delete metadata
   await supabase
     .from("animal_media")
     .update({ deleted_at: new Date().toISOString() })
     .eq("id", mediaId);
 
-  // Best-effort remove from Storage
   await supabase.storage.from(MEDIA_BUCKET).remove([row.storage_path]);
 
-  // If cover pointed at this file, clear or point to next
+  // WP-13: free storage budget
+  if (row.size_bytes && row.size_bytes > 0) {
+    await releaseStorage(user.orgId!, row.size_bytes);
+  }
+
   const { data: animal } = await supabase
     .from("animals")
     .select("cover_image_url")
