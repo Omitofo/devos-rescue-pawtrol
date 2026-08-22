@@ -16,14 +16,14 @@ International discovery platform for rescued animals from verified rescue organi
 | **WP-02** | Schema, RLS, indexes, seed | ✅ | Supabase project `sltubignbyatrvqynzdr` |
 | **WP-03** | Auth & session, elevated window | ✅ | Org OTP + **password**; admin password |
 | **WP-04** | Media (Storage bucket, upload, gallery) | ✅ | Bucket `animal-media`; max 8 imgs / 8 MB |
-| **WP-05** | Public discovery | ✅ | Grid, filters, detail, interest CTA |
+| **WP-05** | Public discovery | ✅ | Grid, filters (desktop + mobile), detail, interest CTA |
 | **WP-06** | Org workspace (animals) | ✅ | Create/edit + elevated gate |
 | **WP-07** | Admin console + **provision org/user** | ✅ | `/admin/organizations/new` |
 | **WP-08** | Guest shop | ✅ | Cart + checkout → `pending_payment` |
 | **WP-09** | Checkout & Stripe payments | ✅ | Checkout Session + webhook → `paid`; wallets via Stripe |
 | **WP-13** | Quota & Rate Guard enforcement | ✅ | Atomic RPCs on animal CUD + media; workspace usage panel |
 | **WP-12** | Public lead / contact page | ✅ | `/contact` → `leads`; Join as rescue + general |
-| **WP-11** | Interest & product analytics | ✅ | Views, search, cart; admin 7-day summary |
+| **WP-11** | Interest & product analytics | ✅ | Views, search_filter, cart; admin 7-day summary |
 | **Admin orders** | Order list + status | ✅ | `/admin/orders` + detail |
 | **Admin quotas** | Full quota limit editor | ✅ | active, CUD/day, uploads/day, storage, imgs/animal |
 | **WP-10** | POD adapter (mock + stubs) | ✅ | Gelato→Printify→Printful→mock; admin Submit to POD |
@@ -49,8 +49,8 @@ International discovery platform for rescued animals from verified rescue organi
 
 ```bash
 npm install
-cp .env.example .env.local   # fill keys
-npx supabase db push         # apply migrations if needed
+cp .env.example .env.local
+npx supabase db push
 npm run dev
 ```
 
@@ -89,7 +89,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 | `/shop` … `/shop/order/[id]` | Guest shop + order status |
 | `/contact` | Public lead form |
 | `/workspace` … | Org animals, profile, photos |
-| `/admin` | Dashboard + analytics |
+| `/admin` | Dashboard + analytics (incl. search_filter) |
 | `/admin/orders`, `/admin/orders/[id]` | Orders + **Submit to POD** |
 | `/admin/organizations/[id]` | Status + full quota editor |
 | `/api/webhooks/stripe` | Stripe webhook |
@@ -111,7 +111,8 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 11. **Admin orders:** list + detail + status.
 12. **Admin quotas:** full limit editor on org detail.
 13. **POD (WP-10):** `src/lib/pod/` — Gelato → Printify → Printful → mock. Live HTTP stubs until keys + SKUs. Admin **Submit to POD** when `paid`. Optional `POD_AUTO_SUBMIT=1`. `POD_FORCE_MOCK=1` forces mock.
-14. **Analytics (WP-11):** `trackEvent` + admin 7-day summary.
+14. **Discovery filters:** Always visible from `sm` up (`<details open>`). Mobile keeps collapsible summary. Do **not** use invalid Tailwind `sm:open` for this — it does not set the HTML attribute.
+15. **Analytics (WP-11):** `trackEvent` + admin 7-day summary. `search_filter` fires when any query/filter is active (metadata includes filter values + `result_count`).
 
 ---
 
