@@ -95,3 +95,45 @@ export async function updateLeadStatus(
   revalidatePath("/admin");
   return { ok: true };
 }
+
+const ORDER_STATUSES = [
+  "pending_payment",
+  "paid",
+  "fulfilment_submitted",
+  "shipped",
+  "delivered",
+  "cancelled",
+  "refunded",
+] as const;
+
+/**
+ * Manual order status transition (ops / pre-POD).
+ * Stripe webhook owns pending_payment → paid; staff may advance fulfilment.
+ */
+export async function updateOrderStatus(
+  orderId: string,
+  status: string
+): Promise<AdminActionResult> {
+  await requirePlatformStaff();
+
+  if (!ORDER_STATUSES.includes(status as (typeof ORDER_STATUSES)[number])) {
+    return { ok: false, error: "Invalid order status." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("orders")
+    .update({ status })
+    .eq("id", orderId);
+
+  if (error) {
+    logger.error("admin.order_status_failed", { orderId, status }, error);
+    return { ok: false, error: error.message };
+  }
+
+  logger.info("admin.order_status_updated", { orderId, status });
+  revalidatePath("/admin");
+  revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${orderId}`);
+  return { ok: true };
+}

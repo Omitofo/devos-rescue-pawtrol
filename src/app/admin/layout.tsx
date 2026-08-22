@@ -22,9 +22,17 @@ export default async function AdminLayout({
             <Link href="/admin" className="font-semibold text-primary">
               Admin Console
             </Link>
-            <Link href="/" className="text-sm text-muted-foreground hover:text-primary">
-              Public site
-            </Link>
+            <nav className="flex items-center gap-3 text-sm text-muted-foreground">
+              <Link href="/admin/orders" className="hover:text-primary">
+                Orders
+              </Link>
+              <Link href="/admin/organizations/new" className="hover:text-primary">
+                Provision
+              </Link>
+              <Link href="/" className="hover:text-primary">
+                Public site
+              </Link>
+            </nav>
           </div>
           <div className="flex items-center gap-3 text-sm text-muted-foreground">
             <span className="hidden sm:inline">
