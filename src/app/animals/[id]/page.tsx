@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
 import { InterestCta } from "@/components/InterestCta";
+import { trackEvent } from "@/lib/analytics/track";
 import { getPublishedAnimal } from "@/lib/data/animals";
 import { listAnimalMedia } from "@/lib/media/service";
 
@@ -16,6 +17,13 @@ export default async function AnimalDetailPage({ params }: { params: Params }) {
   const animal = await getPublishedAnimal(id);
 
   if (!animal) notFound();
+
+  // WP-11: animal detail view (best-effort, no PII)
+  await trackEvent({
+    event_type: "animal_view",
+    animal_id: animal.id,
+    org_id: animal.org_id,
+  });
 
   const media = await listAnimalMedia(id);
   const hero =
