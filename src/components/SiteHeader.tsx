@@ -1,5 +1,5 @@
 /**
- * Public site header — discovery + shop + auth-aware nav.
+ * Public site header — discovery + shop + contact + auth-aware nav.
  */
 
 import Link from "next/link";
@@ -20,6 +20,9 @@ export async function SiteHeader() {
           </Link>
           <Link href="/shop" className="hover:text-primary">
             Shop
+          </Link>
+          <Link href="/contact" className="hover:text-primary">
+            Contact
           </Link>
           {user?.role === "org_user" && (
             <Link href="/workspace" className="font-medium text-primary hover:underline">
