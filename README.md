@@ -21,8 +21,9 @@ International discovery platform for rescued animals from verified rescue organi
 | **WP-07** | Admin console + **provision org/user** | ✅ | `/admin/organizations/new` |
 | **WP-08** | Guest shop | ✅ | Cart + checkout → `pending_payment` |
 | **WP-09** | Checkout & Stripe payments | ✅ | Checkout Session + webhook → `paid`; wallets via Stripe |
+| **WP-13** | Quota & Rate Guard enforcement | ✅ | Atomic RPCs on animal CUD + media; workspace usage panel |
 | **J-05** | Org profile / Contact / CTA edit | ✅ | `/workspace/profile` |
-| WP-10+ | POD, deeper analytics, i18n, quotas, etc. | ⏳ | See “Next” below |
+| WP-10+ | POD, deeper analytics, i18n, etc. | ⏳ | See “Next” below |
 
 **Working style:** one WP at a time; heavy code comments for fresh AI/human context; push to `main`.
 
@@ -90,7 +91,7 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 | `/shop/order/[id]` | Order status + Pay with Stripe |
 | `/auth/login` | Org user (password or OTP) → `/workspace` |
 | `/auth/admin/login` | Platform staff → `/admin` |
-| `/workspace` | Org animals |
+| `/workspace` | Org animals + **quota usage panel** |
 | `/workspace/profile` | Org public profile / CTA / contact |
 | `/workspace/animals/new`, `.../[id]/edit` | Create/edit + **photos** |
 | `/admin` | Dashboard |
@@ -137,6 +138,7 @@ Three orgs (ES / PH / VE), ~10 animals with cover images, 2 products, 1 lead. Fi
 6. **Interest CTA** writes `interest_events` then navigates to org `#contact` (no platform message form).
 7. **Storage path:** `{org_id}/{animal_id}/{uuid}.ext` in bucket `animal-media`.
 8. **Stripe (WP-09):** Checkout Session created after order insert; webhook marks `paid` and writes `order_completed` analytics. POD fulfilment is WP-10.
+9. **Quotas (WP-13):** SECURITY DEFINER RPCs (`quota_consume_animal_cud`, `quota_reserve_active_animal`, `quota_consume_image_upload`, …). Apply migration `20260822000000_wp13_quota_enforcement.sql`.
 
 ---
 
@@ -145,8 +147,8 @@ Three orgs (ES / PH / VE), ~10 animals with cover images, 2 products, 1 lead. Fi
 1. **WP-10 POD adapter** — fulfilment after `paid` (Gelato → Printify → Printful)
 2. **WP-11 analytics** — animal/org view + search events (write path partially used)
 3. **WP-12 Public lead / contact page** — write to `leads`
-4. **WP-13 Quota enforcement** on animal CUD (counters already on `organization_quotas`)
-5. **Admin order list** — visibility into paid / pending orders
+4. **Admin order list** — visibility into paid / pending orders
+5. **Admin quota form** — raise daily CUD / storage limits (max_active already editable)
 
 ---
 
