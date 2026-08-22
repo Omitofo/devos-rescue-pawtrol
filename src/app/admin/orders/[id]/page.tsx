@@ -1,11 +1,12 @@
 /**
- * Admin order detail — items, shipping, status transitions.
+ * Admin order detail — items, shipping, status, POD submit (WP-10).
  */
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getOrderAdmin } from "@/lib/data/admin";
-import { updateOrderStatus } from "@/lib/admin/actions";
+import { updateOrderStatus, submitOrderToPodAction } from "@/lib/admin/actions";
+import { getPodProviderStatus } from "@/lib/pod";
 
 type Params = Promise<{ id: string }>;
 
@@ -39,6 +40,8 @@ export default async function AdminOrderDetailPage({
   const order = await getOrderAdmin(id);
   if (!order) notFound();
 
+  const podStatus = getPodProviderStatus();
+
   const addr = order.shipping_address as
     | { line1?: string; city?: string; postal?: string; country?: string }
     | null;
@@ -48,6 +51,12 @@ export default async function AdminOrderDetailPage({
     const orderId = String(formData.get("order_id") ?? "");
     const status = String(formData.get("status") ?? "");
     if (orderId) await updateOrderStatus(orderId, status);
+  }
+
+  async function submitPod(formData: FormData) {
+    "use server";
+    const orderId = String(formData.get("order_id") ?? "");
+    if (orderId) await submitOrderToPodAction(orderId);
   }
 
   return (
@@ -140,11 +149,41 @@ export default async function AdminOrderDetailPage({
         </div>
       </section>
 
+      {(order.status === "paid" ||
+        order.status === "fulfilment_submitted") && (
+        <section className="space-y-3 rounded-xl border border-border p-5">
+          <h2 className="text-sm font-semibold text-primary">POD fulfilment</h2>
+          <p className="text-xs text-muted-foreground">
+            Active provider: <strong>{podStatus.active}</strong>
+            {podStatus.configured.length > 0
+              ? ` (keys seen: ${podStatus.configured.join(", ")})`
+              : " (no live keys \u2014 mock)"}
+            . {podStatus.note}
+          </p>
+          {order.pod_order_id ? (
+            <p className="text-sm text-primary">
+              Already submitted \u00b7 {order.pod_provider} / {order.pod_order_id}
+              {order.pod_status ? ` \u00b7 ${order.pod_status}` : ""}
+            </p>
+          ) : (
+            <form action={submitPod}>
+              <input type="hidden" name="order_id" value={order.id} />
+              <button
+                type="submit"
+                className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+              >
+                Submit to POD
+              </button>
+            </form>
+          )}
+        </section>
+      )}
+
       <section className="space-y-3 rounded-xl border border-border p-5">
         <h2 className="text-sm font-semibold text-primary">Update status</h2>
         <p className="text-xs text-muted-foreground">
-          Stripe webhook normally moves orders to <code>paid</code>. Use this for
-          manual ops or pre-POD fulfilment tracking.
+          Stripe webhook normally moves orders to <code>paid</code>. After POD
+          submit, status becomes <code>fulfilment_submitted</code>.
         </p>
         <form action={setStatus} className="flex flex-wrap items-end gap-3">
           <input type="hidden" name="order_id" value={order.id} />
