@@ -1,8 +1,10 @@
 "use server";
 
 /**
- * Organization animal mutations — WP-06.
+ * Organization animal mutations — WP-06 + WP-13.
+ *
  * Every write requires an active elevated re-auth window (J-04, E-08).
+ * WP-13: daily CUD limit + active-animal capacity enforced via quota RPCs.
  */
 
 import { revalidatePath } from "next/cache";
@@ -12,10 +14,16 @@ import { requireOrgMember } from "@/lib/auth/session";
 import { requireElevatedWindow } from "@/lib/auth/elevated";
 import { logger } from "@/lib/logger";
 import type { AnimalWriteInput } from "@/lib/data/workspace";
+import {
+  consumeAnimalCud,
+  isActiveAnimalStatus,
+  releaseActiveAnimal,
+  reserveActiveAnimal,
+} from "@/lib/quota/service";
 
 export type MutationResult =
   | { ok: true; id?: string }
-  | { ok: false; error: string; code?: "ELEVATED_REAUTH_REQUIRED" };
+  | { ok: false; error: string; code?: "ELEVATED_REAUTH_REQUIRED" | string };
 
 function parseInput(formData: FormData): AnimalWriteInput {
   const status = String(formData.get("status") ?? "draft") as AnimalWriteInput["status"];
@@ -52,12 +60,30 @@ async function guardMutation() {
 export async function createAnimal(formData: FormData): Promise<MutationResult> {
   const { user, error } = await guardMutation();
   if (error || !user?.orgId) {
-    return { ok: false, error: "Elevated re-authentication required.", code: "ELEVATED_REAUTH_REQUIRED" };
+    return {
+      ok: false,
+      error: "Elevated re-authentication required.",
+      code: "ELEVATED_REAUTH_REQUIRED",
+    };
   }
 
   const input = parseInput(formData);
   if (!input.name || !input.species) {
     return { ok: false, error: "Name and species are required." };
+  }
+
+  // WP-13: daily CUD budget
+  const cud = await consumeAnimalCud(user.orgId);
+  if (!cud.ok) {
+    return { ok: false, error: cud.error, code: cud.code };
+  }
+
+  // WP-13: active-animal capacity when creating already-published/pending
+  if (isActiveAnimalStatus(input.status)) {
+    const slot = await reserveActiveAnimal(user.orgId);
+    if (!slot.ok) {
+      return { ok: false, error: slot.error, code: slot.code };
+    }
   }
 
   const supabase = await createClient();
@@ -87,6 +113,10 @@ export async function createAnimal(formData: FormData): Promise<MutationResult> 
     .single();
 
   if (insertError) {
+    // Best-effort rollback of active slot if we reserved one
+    if (isActiveAnimalStatus(input.status)) {
+      await releaseActiveAnimal(user.orgId);
+    }
     logger.error("workspace.animal_create_failed", { orgId: user.orgId }, insertError);
     return { ok: false, error: insertError.message };
   }
@@ -103,7 +133,11 @@ export async function updateAnimal(
 ): Promise<MutationResult> {
   const { user, error } = await guardMutation();
   if (error || !user?.orgId) {
-    return { ok: false, error: "Elevated re-authentication required.", code: "ELEVATED_REAUTH_REQUIRED" };
+    return {
+      ok: false,
+      error: "Elevated re-authentication required.",
+      code: "ELEVATED_REAUTH_REQUIRED",
+    };
   }
 
   const input = parseInput(formData);
@@ -113,16 +147,33 @@ export async function updateAnimal(
 
   const supabase = await createClient();
 
-  // Preserve first published_at
   const { data: existing } = await supabase
     .from("animals")
-    .select("published_at, status")
+    .select("published_at, status, deleted_at")
     .eq("id", animalId)
     .eq("org_id", user.orgId)
     .maybeSingle();
 
   if (!existing) {
     return { ok: false, error: "Animal not found." };
+  }
+
+  // WP-13: daily CUD budget
+  const cud = await consumeAnimalCud(user.orgId);
+  if (!cud.ok) {
+    return { ok: false, error: cud.error, code: cud.code };
+  }
+
+  const wasActive =
+    isActiveAnimalStatus(existing.status) && !existing.deleted_at;
+  const willBeActive =
+    isActiveAnimalStatus(input.status) && input.status !== "removed";
+
+  if (!wasActive && willBeActive) {
+    const slot = await reserveActiveAnimal(user.orgId);
+    if (!slot.ok) {
+      return { ok: false, error: slot.error, code: slot.code };
+    }
   }
 
   const published_at =
@@ -156,8 +207,15 @@ export async function updateAnimal(
     .eq("org_id", user.orgId);
 
   if (updateError) {
+    if (!wasActive && willBeActive) {
+      await releaseActiveAnimal(user.orgId);
+    }
     logger.error("workspace.animal_update_failed", { animalId }, updateError);
     return { ok: false, error: updateError.message };
+  }
+
+  if (wasActive && !willBeActive) {
+    await releaseActiveAnimal(user.orgId);
   }
 
   logger.info("workspace.animal_updated", { animalId, orgId: user.orgId });
@@ -171,10 +229,31 @@ export async function updateAnimal(
 export async function softDeleteAnimal(animalId: string): Promise<MutationResult> {
   const { user, error } = await guardMutation();
   if (error || !user?.orgId) {
-    return { ok: false, error: "Elevated re-authentication required.", code: "ELEVATED_REAUTH_REQUIRED" };
+    return {
+      ok: false,
+      error: "Elevated re-authentication required.",
+      code: "ELEVATED_REAUTH_REQUIRED",
+    };
   }
 
   const supabase = await createClient();
+
+  const { data: existing } = await supabase
+    .from("animals")
+    .select("status, deleted_at")
+    .eq("id", animalId)
+    .eq("org_id", user.orgId)
+    .maybeSingle();
+
+  if (!existing) {
+    return { ok: false, error: "Animal not found." };
+  }
+
+  const cud = await consumeAnimalCud(user.orgId);
+  if (!cud.ok) {
+    return { ok: false, error: cud.error, code: cud.code };
+  }
+
   const { error: updateError } = await supabase
     .from("animals")
     .update({
@@ -185,10 +264,16 @@ export async function softDeleteAnimal(animalId: string): Promise<MutationResult
     .eq("org_id", user.orgId);
 
   if (updateError) {
+    logger.error("workspace.animal_soft_delete_failed", { animalId }, updateError);
     return { ok: false, error: updateError.message };
   }
 
+  if (isActiveAnimalStatus(existing.status) && !existing.deleted_at) {
+    await releaseActiveAnimal(user.orgId);
+  }
+
+  logger.info("workspace.animal_soft_deleted", { animalId, orgId: user.orgId });
   revalidatePath("/workspace");
   revalidatePath("/");
-  redirect("/workspace");
+  return { ok: true, id: animalId };
 }
