@@ -6,6 +6,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProductBySlug, formatMoney } from "@/lib/shop/products";
 import { AddToCartButton } from "@/components/shop/AddToCartButton";
+import { trackEvent } from "@/lib/analytics/track";
 
 type Params = Promise<{ slug: string }>;
 
@@ -13,6 +14,12 @@ export default async function ProductPage({ params }: { params: Params }) {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
   if (!product) notFound();
+
+  // WP-11: product detail view
+  await trackEvent({
+    event_type: "product_view",
+    product_id: product.id,
+  });
 
   return (
     <div className="space-y-6">
