@@ -6,13 +6,11 @@
  * - On checkout.session.completed → mark order paid, store payment_intent id
  * - Emit analytics_events.order_completed (best-effort)
  *
- * Fulfilment (POD) is intentionally deferred to WP-10. Status stops at `paid`.
+ * Fulfilment (POD, WP-10): optional auto-submit when POD_AUTO_SUBMIT=1.
+ * Default stops at `paid`; admin can submit from /admin/orders/[id].
  *
  * Local testing:
  *   stripe listen --forward-to localhost:3000/api/webhooks/stripe
- *
- * Excluded from session proxy matcher via path under /api (proxy still runs
- * unless matched out — webhook does not need cookies).
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -60,8 +58,6 @@ export async function POST(request: NextRequest) {
         await handleCheckoutCompleted(session);
         break;
       }
-      // Optional: payment_intent.succeeded is redundant when using Checkout
-      // in payment mode, but kept for resilience if we add PaymentIntents later.
       case "payment_intent.succeeded": {
         const pi = event.data.object as Stripe.PaymentIntent;
         const orderId = pi.metadata?.order_id;
@@ -79,7 +75,6 @@ export async function POST(request: NextRequest) {
     }
   } catch (err) {
     logger.error("stripe.webhook_handler_failed", { type: event.type }, err);
-    // Return 500 so Stripe retries.
     return NextResponse.json({ error: "Handler failed" }, { status: 500 });
   }
 
@@ -114,7 +109,6 @@ async function markOrderPaid(args: {
 }) {
   const supabase = createServiceClient();
 
-  // Idempotent: only transition from pending_payment → paid.
   const { data: existing } = await supabase
     .from("orders")
     .select("id, status")
@@ -161,7 +155,6 @@ async function markOrderPaid(args: {
     throw error;
   }
 
-  // Day-one analytics: order_completed (WP-11 surface; write path here).
   await supabase.from("analytics_events").insert({
     event_type: "order_completed",
     metadata: {
@@ -175,4 +168,26 @@ async function markOrderPaid(args: {
     orderId: args.orderId,
     paymentIntentId: args.paymentIntentId,
   });
+
+  // WP-10: optional auto POD submit (off by default)
+  if (process.env.POD_AUTO_SUBMIT === "1") {
+    try {
+      const { submitOrderToPod } = await import("@/lib/pod/submit");
+      const pod = await submitOrderToPod(args.orderId);
+      if (pod.ok) {
+        logger.info("pod.auto_submit_ok", {
+          orderId: args.orderId,
+          provider: pod.provider,
+          podOrderId: pod.podOrderId,
+        });
+      } else {
+        logger.warn("pod.auto_submit_failed", {
+          orderId: args.orderId,
+          error: pod.error,
+        });
+      }
+    } catch (err) {
+      logger.warn("pod.auto_submit_exception", { orderId: args.orderId }, err);
+    }
+  }
 }
