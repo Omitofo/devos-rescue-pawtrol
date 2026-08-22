@@ -48,6 +48,11 @@ export type AdminQuota = {
   active_animals_count: number;
   max_storage_bytes: number;
   storage_bytes_used: number;
+  max_animal_cud_per_day?: number;
+  animal_cud_today?: number;
+  max_image_uploads_per_day?: number;
+  image_uploads_today?: number;
+  max_images_per_animal?: number;
 };
 
 export async function listAllOrganizations(): Promise<AdminOrg[]> {
@@ -88,7 +93,7 @@ export async function getOrgQuota(orgId: string): Promise<AdminQuota | null> {
   const { data } = await supabase
     .from("organization_quotas")
     .select(
-      "org_id, max_active_animals, active_animals_count, max_storage_bytes, storage_bytes_used"
+      "org_id, max_active_animals, active_animals_count, max_storage_bytes, storage_bytes_used, max_animal_cud_per_day, animal_cud_today, max_image_uploads_per_day, image_uploads_today, max_images_per_animal"
     )
     .eq("org_id", orgId)
     .maybeSingle();
