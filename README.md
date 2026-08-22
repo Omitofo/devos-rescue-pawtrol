@@ -22,6 +22,7 @@ International discovery platform for rescued animals from verified rescue organi
 | **WP-08** | Guest shop | ✅ | Cart + checkout → `pending_payment` |
 | **WP-09** | Checkout & Stripe payments | ✅ | Checkout Session + webhook → `paid`; wallets via Stripe |
 | **WP-13** | Quota & Rate Guard enforcement | ✅ | Atomic RPCs on animal CUD + media; workspace usage panel |
+| **WP-12** | Public lead / contact page | ✅ | `/contact` → `leads`; Join as rescue + general |
 | **J-05** | Org profile / Contact / CTA edit | ✅ | `/workspace/profile` |
 | WP-10+ | POD, deeper analytics, i18n, etc. | ⏳ | See “Next” below |
 
@@ -89,6 +90,7 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 | `/organizations/[slug]` | Org profile + Contact `#contact` |
 | `/shop`, `/shop/[slug]`, `/shop/cart`, `/shop/checkout` | Guest shop |
 | `/shop/order/[id]` | Order status + Pay with Stripe |
+| `/contact` | Public lead form (Join as rescue / contact) |
 | `/auth/login` | Org user (password or OTP) → `/workspace` |
 | `/auth/admin/login` | Platform staff → `/admin` |
 | `/workspace` | Org animals + **quota usage panel** |
@@ -139,6 +141,7 @@ Three orgs (ES / PH / VE), ~10 animals with cover images, 2 products, 1 lead. Fi
 7. **Storage path:** `{org_id}/{animal_id}/{uuid}.ext` in bucket `animal-media`.
 8. **Stripe (WP-09):** Checkout Session created after order insert; webhook marks `paid` and writes `order_completed` analytics. POD fulfilment is WP-10.
 9. **Quotas (WP-13):** SECURITY DEFINER RPCs (`quota_consume_animal_cud`, `quota_reserve_active_animal`, `quota_consume_image_upload`, …). Apply migration `20260822000000_wp13_quota_enforcement.sql`.
+10. **Leads (WP-12):** Public `/contact` inserts into `leads` (RLS allows anon INSERT). Admins triage on `/admin`.
 
 ---
 
@@ -146,9 +149,8 @@ Three orgs (ES / PH / VE), ~10 animals with cover images, 2 products, 1 lead. Fi
 
 1. **WP-10 POD adapter** — fulfilment after `paid` (Gelato → Printify → Printful)
 2. **WP-11 analytics** — animal/org view + search events (write path partially used)
-3. **WP-12 Public lead / contact page** — write to `leads`
-4. **Admin order list** — visibility into paid / pending orders
-5. **Admin quota form** — raise daily CUD / storage limits (max_active already editable)
+3. **Admin order list** — visibility into paid / pending orders
+4. **Admin quota form** — raise daily CUD / storage limits (max_active already editable)
 
 ---
 
