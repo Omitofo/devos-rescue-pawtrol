@@ -5,7 +5,7 @@
  * always see a current JWT. Heavy auth logic (role checks, elevated window)
  * lives in Server Components / Server Actions via @/lib/auth — not here.
  *
- * Matcher excludes static assets and the health endpoint.
+ * Matcher excludes static assets, health, and Stripe webhooks (raw body).
  */
 
 import { type NextRequest } from "next/server";
@@ -17,6 +17,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|api/health).*)",
+    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|api/health|api/webhooks).*)",
   ],
 };
