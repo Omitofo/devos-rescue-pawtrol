@@ -26,8 +26,9 @@ International discovery platform for rescued animals from verified rescue organi
 | **WP-11** | Interest & product analytics | ✅ | Views, search, cart; admin 7-day summary |
 | **Admin orders** | Order list + status | ✅ | `/admin/orders` + detail |
 | **Admin quotas** | Full quota limit editor | ✅ | active, CUD/day, uploads/day, storage, imgs/animal |
+| **WP-10** | POD adapter (mock + stubs) | ✅ | Gelato→Printify→Printful→mock; admin Submit to POD |
 | **J-05** | Org profile / Contact / CTA edit | ✅ | `/workspace/profile` |
-| WP-10+ | POD, deeper analytics, i18n, etc. | ⏳ | See “Next” below |
+| Later | Real POD HTTP + SKUs, retention, i18n | ⏳ | See “Next” / open questions |
 
 **Working style:** one WP at a time; heavy code comments for fresh AI/human context; push to `main`.
 
@@ -40,6 +41,7 @@ International discovery platform for rescued animals from verified rescue organi
 - **Tailwind CSS** + CSS variable design tokens
 - **Supabase** — Postgres + Auth + Storage + RLS only backend
 - **Stripe** — Checkout Session (hosted) + webhooks (WP-09)
+- **POD** — adapter interface (WP-10); mock without keys
 
 ---
 
@@ -57,30 +59,23 @@ npm run dev
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=     # server only — orders + admin provisioning
+SUPABASE_SERVICE_ROLE_KEY=
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
-# WP-09 Stripe (optional locally — without keys, orders stay pending_payment)
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+
+# WP-10 POD (optional — without keys, mock provider is used)
+# POD_FORCE_MOCK=1
+# POD_AUTO_SUBMIT=1
+# GELATO_API_KEY=
+# PRINTIFY_API_TOKEN=
+# PRINTIFY_SHOP_ID=
+# PRINTFUL_API_KEY=
 ```
 
 **NFR-02:** never put the service role in `NEXT_PUBLIC_*` or client bundles.
-
-### Supabase Auth URLs
-
-- Site URL: `http://localhost:3000`
-- Redirect: `http://localhost:3000/auth/callback`
-
-Free-tier **email OTP is rate-limited**; prefer **org password login** for local work.
-
-### Stripe local webhook
-
-```bash
-stripe listen --forward-to localhost:3000/api/webhooks/stripe
-# paste the whsec_… into STRIPE_WEBHOOK_SECRET
-```
 
 ---
 
@@ -91,70 +86,48 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 | `/` | Public animal grid + filters |
 | `/animals/[id]` | Animal detail + interest CTA |
 | `/organizations/[slug]` | Org profile + Contact `#contact` |
-| `/shop`, `/shop/[slug]`, `/shop/cart`, `/shop/checkout` | Guest shop |
-| `/shop/order/[id]` | Order status + Pay with Stripe |
-| `/contact` | Public lead form (Join as rescue / contact) |
-| `/auth/login` | Org user (password or OTP) → `/workspace` |
-| `/auth/admin/login` | Platform staff → `/admin` |
-| `/workspace` | Org animals + **quota usage panel** |
-| `/workspace/profile` | Org public profile / CTA / contact |
-| `/workspace/animals/new`, `.../[id]/edit` | Create/edit + **photos** |
-| `/admin` | Dashboard + **analytics 7-day summary** |
-| `/admin/orders`, `/admin/orders/[id]` | Order list + detail / status |
-| `/admin/organizations/new` | Provision org + optional user |
-| `/admin/organizations/[id]` | Status + **full quota editor** |
-| `/api/health` | Health check |
-| `/api/webhooks/stripe` | Stripe webhook (signature verified) |
+| `/shop` … `/shop/order/[id]` | Guest shop + order status |
+| `/contact` | Public lead form |
+| `/workspace` … | Org animals, profile, photos |
+| `/admin` | Dashboard + analytics |
+| `/admin/orders`, `/admin/orders/[id]` | Orders + **Submit to POD** |
+| `/admin/organizations/[id]` | Status + full quota editor |
+| `/api/webhooks/stripe` | Stripe webhook |
 
 ---
 
-## Auth & roles (remember)
+## Important implementation notes
 
-JWT **`app_metadata`** (set at provision time):
-
-```json
-{ "role": "org_user", "org_id": "<uuid>" }
-```
-
-```json
-{ "role": "platform_admin" }
-```
-
-Roles: `org_user` | `platform_admin` | `platform_moderator`.
-
-**Elevated window:** cookie `rp_elevated_until` (~15 min). Required for org **mutations** (animals, media, profile). Granted on OTP verify **or** org password login. UI shows “Editing unlocked” vs “View only”.
-
-**RLS helpers:** `jwt_role()`, `jwt_org_id()`, `is_platform_admin()`, `is_org_member()` in schema migration.
-
----
-
-## Demo seed
-
-Three orgs (ES / PH / VE), ~10 animals with cover images, 2 products, 1 lead. Fixed UUIDs under `a000…` / `b000…`. Migrations in `supabase/migrations/`.
-
----
-
-## Important implementation notes (for future sessions)
-
-1. **Proxy not middleware** — Next 16 uses `src/proxy.ts` + `export function proxy`. Matcher excludes `/api/webhooks`.
-2. **JSON operators in SQL** must be ASCII `->` / `->>` (not Unicode arrows).
-3. **Do not DELETE seed orgs** referenced by `profiles` (check constraint `org_user` requires `org_id`). Upsert orgs instead.
+1. **Proxy not middleware** — Next 16 uses `src/proxy.ts`.
+2. **JSON operators in SQL** must be ASCII `->` / `->>`.
+3. **Do not DELETE seed orgs** referenced by `profiles`.
 4. **Orders + Auth admin APIs** need **service role** on the server.
-5. **Shop** is navigationally separate from discovery; same design tokens.
-6. **Interest CTA** writes `interest_events` then navigates to org `#contact` (no platform message form).
+5. **Shop** is navigationally separate from discovery.
+6. **Interest CTA** writes `interest_events` then navigates to org `#contact`.
 7. **Storage path:** `{org_id}/{animal_id}/{uuid}.ext` in bucket `animal-media`.
-8. **Stripe (WP-09):** Checkout Session created after order insert; webhook marks `paid` and writes `order_completed` analytics. POD fulfilment is WP-10.
-9. **Quotas (WP-13):** SECURITY DEFINER RPCs (`quota_consume_animal_cud`, `quota_reserve_active_animal`, `quota_consume_image_upload`, …). Apply migration `20260822000000_wp13_quota_enforcement.sql`.
-10. **Leads (WP-12):** Public `/contact` inserts into `leads` (RLS allows anon INSERT). Admins triage on `/admin`.
-11. **Admin orders:** `/admin/orders` lists guest shop orders; detail page can update status (pre-POD ops).
-12. **Admin quotas:** `/admin/organizations/[id]` edits max_active, CUD/day, uploads/day, storage MB, images/animal via `updateOrgQuota`.
-13. **Analytics (WP-11):** `trackEvent` in `src/lib/analytics/track.ts`. animal_view / org_view / product_view / search_filter / add_to_cart + existing interest_cta / checkout_started / order_completed. Admin dashboard shows 7-day counts.
+8. **Stripe (WP-09):** webhook marks `paid` + `order_completed` analytics.
+9. **Quotas (WP-13):** SECURITY DEFINER RPCs; migration `20260822000000_wp13_quota_enforcement.sql`.
+10. **Leads (WP-12):** Public `/contact` → `leads`.
+11. **Admin orders:** list + detail + status.
+12. **Admin quotas:** full limit editor on org detail.
+13. **POD (WP-10):** `src/lib/pod/` — Gelato → Printify → Printful → mock. Live HTTP stubs until keys + SKUs. Admin **Submit to POD** when `paid`. Optional `POD_AUTO_SUBMIT=1`. `POD_FORCE_MOCK=1` forces mock.
+14. **Analytics (WP-11):** `trackEvent` + admin 7-day summary.
 
 ---
 
 ## Suggested next work
 
-1. **WP-10 POD adapter** — fulfilment after `paid` (Gelato → Printify → Printful)
+1. **Wire a real POD HTTP client** (Gelato first) once `GELATO_API_KEY` + product SKUs exist
+2. **Product metadata** — map catalogue items to provider variant/SKU IDs
+3. **POD webhooks** — update `pod_status` / order status on shipped/delivered
+4. **WP-14+** retention emails, visual polish, i18n (see DevOS `implementation.md`)
+
+## Open questions / notes (POD)
+
+- **No live keys yet:** fulfilment uses **mock** (`pod_order_id` like `mock_…`, status → `fulfilment_submitted`). Safe for local testing.
+- **If you set a real API key** before the HTTP client is implemented, that provider is *selected* but submit returns an error — clear the key or set `POD_FORCE_MOCK=1` to keep using mock.
+- **SKU mapping** is the main blocker for production POD, not the adapter shape.
+- **Auto-submit** after Stripe is opt-in (`POD_AUTO_SUBMIT=1`); default is admin-triggered.
 
 ---
 
