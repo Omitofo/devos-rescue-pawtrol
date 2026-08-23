@@ -2,7 +2,7 @@
  * Public discovery home — WP-05 (J-01) + UI polish (hero).
  *
  * Layout: energetic hero → filters → animal grid.
- * Zero account gate (NFR-04, NFR-08).
+ * Mobile: readable text panel over softer shapes; no horizontal overflow.
  */
 
 import Link from "next/link";
@@ -50,48 +50,40 @@ export default async function HomePage({
     <>
       <SiteHeader />
 
-      {/* Hero — bold color shapes (reference energy) + collage */}
       <section className="relative overflow-hidden border-b border-border bg-[#FFF8F0]">
-        {/* Color splashes — solid geometric energy */}
         <div
           aria-hidden
-          className="pointer-events-none absolute -left-24 -top-16 h-72 w-72 rounded-full bg-[#FF6B2C] opacity-90 sm:h-96 sm:w-96"
+          className="pointer-events-none absolute -left-20 -top-12 h-52 w-52 rounded-full bg-[#FF6B2C]/70 sm:-left-24 sm:-top-16 sm:h-96 sm:w-96 sm:opacity-90"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-8 top-8 h-64 w-64 rounded-[2.5rem] bg-[#7C3AED] opacity-90 sm:h-80 sm:w-80"
+          className="pointer-events-none absolute -right-12 top-4 h-40 w-40 rounded-[2rem] bg-[#7C3AED]/70 sm:-right-8 sm:top-8 sm:h-80 sm:w-80 sm:rounded-[2.5rem] sm:opacity-90"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute bottom-0 right-1/4 h-40 w-56 rounded-t-[3rem] bg-[#22C55E] opacity-80"
+          className="pointer-events-none absolute bottom-0 right-[20%] hidden h-40 w-56 rounded-t-[3rem] bg-[#22C55E] opacity-80 sm:block"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute right-1/3 top-1/4 h-28 w-28 rounded-full bg-[#FBBF24] opacity-80"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute bottom-12 left-1/3 h-24 w-40 rounded-full bg-[#A78BFA] opacity-50 blur-2xl"
+          className="pointer-events-none absolute right-1/3 top-1/4 hidden h-28 w-28 rounded-full bg-[#FBBF24] opacity-80 sm:block"
         />
 
-        <div className="relative mx-auto grid min-h-[28rem] max-w-6xl items-center gap-8 px-4 py-12 sm:min-h-[32rem] sm:px-6 sm:py-16 lg:min-h-[36rem] lg:grid-cols-2 lg:gap-12 lg:py-20">
-          <div className="space-y-6">
-            <h1 className="text-4xl font-bold leading-[1.08] tracking-tight text-primary sm:text-5xl lg:text-6xl">
+        <div className="relative mx-auto grid max-w-6xl items-center gap-8 px-4 py-10 sm:min-h-[32rem] sm:px-6 sm:py-16 lg:min-h-[36rem] lg:grid-cols-2 lg:gap-12 lg:py-20">
+          <div className="relative z-10 space-y-5 rounded-2xl bg-white/90 p-5 shadow-sm ring-1 ring-black/5 backdrop-blur-sm sm:bg-transparent sm:p-0 sm:shadow-none sm:ring-0 sm:backdrop-blur-none">
+            <h1 className="text-3xl font-bold leading-[1.15] tracking-tight text-primary sm:text-5xl lg:text-6xl">
               Rescue changes{" "}
-              <span className="relative inline-block">
+              <span className="whitespace-nowrap">
                 everything
-                <span
-                  aria-hidden
-                  className="absolute -right-7 -top-1 text-3xl text-[#7C3AED] sm:-right-8 sm:text-4xl"
-                >
+                <span aria-hidden className="ml-1 text-[#7C3AED]">
                   {"\u2665"}
                 </span>
               </span>
               .
             </h1>
-            <p className="max-w-md text-base text-muted-foreground sm:text-lg">
+            <p className="max-w-md text-sm leading-relaxed text-primary/80 sm:text-base sm:text-muted-foreground lg:text-lg">
               Real animals. Real stories. Real impact. Find your new best friend
-              from verified rescue organisations{" "}{"\u2014"} no account needed.
+              from verified rescue organisations{" "}
+              {"\u2014"} no account needed.
             </p>
             <div className="flex flex-wrap gap-3">
               <a
@@ -103,14 +95,14 @@ export default async function HomePage({
               </a>
               <Link
                 href="/shop"
-                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface/90 px-5 py-2.5 text-sm font-medium text-primary backdrop-blur-sm transition hover:bg-muted"
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-5 py-2.5 text-sm font-medium text-primary transition hover:bg-muted"
               >
                 Shop to help
               </Link>
             </div>
           </div>
 
-          <div className="relative mx-auto w-full max-w-lg lg:max-w-none">
+          <div className="relative z-10 mx-auto w-full max-w-md lg:max-w-none">
             <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl shadow-xl ring-1 ring-black/5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -123,16 +115,7 @@ export default async function HomePage({
         </div>
       </section>
 
-      <main className="relative mx-auto max-w-6xl px-4 py-10 sm:px-6">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -left-20 top-24 h-48 w-48 rounded-full bg-[#FF6B2C]/10 blur-3xl"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -right-16 top-64 h-56 w-56 rounded-full bg-[#7C3AED]/10 blur-3xl"
-        />
-
+      <main className="relative mx-auto max-w-6xl overflow-x-hidden px-4 py-10 sm:px-6">
         <section
           id="filters"
           className="relative mb-10 scroll-mt-20"

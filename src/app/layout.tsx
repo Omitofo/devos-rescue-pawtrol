@@ -22,9 +22,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="relative min-h-screen antialiased">
+      <body className="relative min-h-screen overflow-x-hidden antialiased">
         <BrandBackdrop />
-        <div className="relative z-0">{children}</div>
+        <div className="relative z-0 min-w-0">{children}</div>
       </body>
     </html>
   );
