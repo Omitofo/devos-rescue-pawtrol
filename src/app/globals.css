@@ -1,9 +1,8 @@
 /**
  * Global styles + design-token plumbing (WP-01)
  *
- * All semantic colours and typography tokens live here as CSS custom properties.
- * Tailwind maps them in tailwind.config.ts so components can use utilities
- * (bg-surface, text-primary, etc.) while the actual values remain single-source.
+ * Brand color pattern lives in BrandBackdrop (fixed layer).
+ * Surfaces (cards, headers) stay elevated white for readability.
  */
 
 @tailwind base;
@@ -12,14 +11,13 @@
 
 :root {
   --color-surface: #ffffff;
-  --color-surface-elevated: #f8fafc;
+  --color-surface-elevated: #ffffff;
   --color-primary: #0f172a;
   --color-primary-foreground: #ffffff;
   --color-muted: #f1f5f9;
   --color-muted-foreground: #64748b;
   --color-border: #e2e8f0;
 
-  /* Brand accents aligned with hero color shapes */
   --color-accent-1: #22c55e;
   --color-accent-2: #7c3aed;
   --color-accent-3: #ff6b2c;
@@ -36,7 +34,7 @@ html {
 }
 
 body {
-  background-color: var(--color-surface);
+  background-color: transparent;
   color: var(--color-primary);
   font-family: var(--font-sans);
 }
