@@ -36,7 +36,7 @@ export default async function AdminLayout({
           </div>
           <div className="flex items-center gap-3 text-sm text-muted-foreground">
             <span className="hidden sm:inline">
-              {user.email} \u00b7 {user.role}
+              {user.email} {"\u00b7"} {user.role}
             </span>
             <form action={signOut.bind(null, "/auth/admin/login")}>
               <button type="submit" className="underline">
