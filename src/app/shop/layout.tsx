@@ -1,6 +1,6 @@
 /**
  * Shop shell — WP-08.
- * Navigationally separated from animal discovery (FR-12), same brand tokens.
+ * Fixed header so nav stays available while scrolling.
  */
 
 import Link from "next/link";
@@ -16,8 +16,8 @@ export default async function ShopLayout({
 
   return (
     <div className="min-h-screen bg-transparent">
-      <header className="border-b border-border/80 bg-surface/90 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-border/80 bg-white/95 backdrop-blur-sm">
+        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 px-4 sm:h-16 sm:px-6">
           <div className="flex items-center gap-4">
             <Link href="/shop" className="font-semibold text-primary">
               Rescue Pawtrol Shop
@@ -37,6 +37,7 @@ export default async function ShopLayout({
           </Link>
         </div>
       </header>
+      <div className="h-14 shrink-0 sm:h-16" aria-hidden />
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">{children}</div>
     </div>
   );

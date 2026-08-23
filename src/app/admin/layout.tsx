@@ -1,6 +1,6 @@
 /**
  * Admin Console shell — WP-07.
- * Desktop: inline nav. Mobile: hamburger (ShellMobileNav).
+ * Fixed header so nav stays available while scrolling.
  */
 
 import Link from "next/link";
@@ -35,8 +35,8 @@ export default async function AdminLayout({
 
   return (
     <div className="min-h-screen bg-transparent">
-      <header className="border-b border-border/80 bg-white/95 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-border/80 bg-white/95 backdrop-blur-sm">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:h-[3.25rem] sm:px-6">
           <Link href="/admin" className="shrink-0 font-semibold text-primary">
             Admin Console
           </Link>
@@ -49,6 +49,7 @@ export default async function AdminLayout({
           </div>
         </div>
       </header>
+      <div className="h-14 shrink-0 sm:h-[3.25rem]" aria-hidden />
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">{children}</div>
     </div>
   );
