@@ -1,15 +1,17 @@
 /**
- * Public discovery home — WP-05 (J-01).
+ * Public discovery home — WP-05 (J-01) + UI polish (hero).
  *
- * SSR grid of published animals + filters.
+ * Layout: full-energy hero → filters → animal grid.
  * Zero account gate (NFR-04, NFR-08).
  */
 
+import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
 import { AnimalCard } from "@/components/AnimalCard";
 import { AnimalFilters } from "@/components/AnimalFilters";
 import { listPublishedAnimals, type AnimalFilters as Filters } from "@/lib/data/animals";
 import { trackEvent } from "@/lib/analytics/track";
+import { HERO_ANIMALS_DATA_URL } from "@/lib/brand/assets";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -32,7 +34,6 @@ export default async function HomePage({
   const animals = await listPublishedAnimals(filters);
 
   // WP-11: filter usage metric — fire when any search/filter is applied
-  // Visible on /admin under analytics as "search filter" (7-day count).
   const activeFilters = Object.fromEntries(
     Object.entries(filters).filter(([, v]) => v != null && v !== "")
   );
@@ -50,23 +51,82 @@ export default async function HomePage({
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        <section className="mb-10 space-y-3">
-          <h1 className="text-3xl font-semibold tracking-tight text-primary sm:text-4xl">
-            Find a rescued friend
-          </h1>
-          <p className="max-w-2xl text-muted-foreground">
-            Browse animals from verified rescue organisations. No account needed —
-            when you find someone special, we&apos;ll connect you with the rescue
-            that cares for them.
-          </p>
-        </section>
 
-        <section className="mb-8">
+      {/* Hero — taller, energetic, animal collage */}
+      <section className="relative overflow-hidden border-b border-border bg-gradient-to-br from-amber-50 via-orange-50 to-violet-100">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -left-20 top-0 h-72 w-72 rounded-full bg-orange-400/30 blur-3xl"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-16 bottom-0 h-80 w-80 rounded-full bg-violet-500/25 blur-3xl"
+        />
+
+        <div className="relative mx-auto grid min-h-[28rem] max-w-6xl items-center gap-8 px-4 py-12 sm:min-h-[32rem] sm:px-6 sm:py-16 lg:min-h-[36rem] lg:grid-cols-2 lg:gap-10 lg:py-20">
+          <div className="space-y-6">
+            <h1 className="text-4xl font-bold leading-[1.08] tracking-tight text-primary sm:text-5xl lg:text-6xl">
+              Rescue changes{" "}
+              <span className="relative inline-block">
+                everything
+                <span
+                  aria-hidden
+                  className="absolute -right-6 -top-1 text-3xl text-violet-500 sm:text-4xl"
+                >
+                  \u2665
+                </span>
+              </span>
+              .
+            </h1>
+            <p className="max-w-md text-base text-muted-foreground sm:text-lg">
+              Real animals. Real stories. Real impact. Find your new best friend
+              from verified rescue organisations \u2014 no account needed.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <a
+                href="#animals"
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90"
+              >
+                Find an animal
+                <span aria-hidden>\u2192</span>
+              </a>
+              <Link
+                href="/contact"
+                className="inline-flex items-center rounded-full border border-border bg-surface px-5 py-2.5 text-sm font-medium text-primary transition hover:bg-muted"
+              >
+                Explore rescues
+              </Link>
+              <Link
+                href="/shop"
+                className="inline-flex items-center rounded-full px-5 py-2.5 text-sm font-medium text-violet-700 underline-offset-4 hover:underline"
+              >
+                Shop to help
+              </Link>
+            </div>
+          </div>
+
+          <div className="relative mx-auto w-full max-w-lg lg:max-w-none">
+            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl shadow-xl ring-1 ring-black/5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={HERO_ANIMALS_DATA_URL}
+                alt="Happy rescued dogs and cats"
+                className="h-full w-full object-cover object-center"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+        <section className="mb-10" aria-label="Search and filters">
           <AnimalFilters current={filters} />
         </section>
 
-        <section>
+        <section id="animals">
+          <h2 className="mb-4 text-xl font-semibold tracking-tight text-primary">
+            Animals looking for love
+          </h2>
           {animals.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border bg-surface-elevated px-6 py-16 text-center">
               <p className="text-base font-medium text-primary">
