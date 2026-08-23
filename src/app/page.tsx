@@ -33,7 +33,6 @@ export default async function HomePage({
 
   const animals = await listPublishedAnimals(filters);
 
-  // WP-11: filter usage metric — fire when any search/filter is applied
   const activeFilters = Object.fromEntries(
     Object.entries(filters).filter(([, v]) => v != null && v !== "")
   );
@@ -52,7 +51,6 @@ export default async function HomePage({
     <>
       <SiteHeader />
 
-      {/* Hero — taller, energetic, animal collage */}
       <section className="relative overflow-hidden border-b border-border bg-gradient-to-br from-amber-50 via-orange-50 to-violet-100">
         <div
           aria-hidden
