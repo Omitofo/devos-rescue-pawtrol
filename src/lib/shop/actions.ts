@@ -31,7 +31,6 @@ export type ShopResult =
 
 export async function addToCartAction(productId: string, quantity = 1) {
   await addToCart(productId, quantity);
-  // WP-11: shop funnel
   await trackEvent({
     event_type: "add_to_cart",
     product_id: productId,
@@ -51,30 +50,24 @@ export async function updateCartQuantityAction(
 
 /**
  * Guest checkout flow:
- * 1. Validate shipping form
- * 2. Insert order + items (service role)
- * 3. Best-effort analytics: checkout_started
- * 4. Clear cart cookie
- * 5. If Stripe configured → Checkout Session → redirect to session.url
- * 6. Else → redirect to order confirmation (pending_payment)
+ * 1. Validate cart + contact fields
+ * 2. Insert pending_payment order + items
+ * 3. If Stripe configured → Checkout Session redirect
+ * 4. Else → order confirmation page (pending payment message)
  */
-export async function placeGuestOrder(formData: FormData): Promise<void> {
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+export async function placeGuestOrder(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim();
   const name = String(formData.get("name") ?? "").trim();
   const line1 = String(formData.get("line1") ?? "").trim();
   const city = String(formData.get("city") ?? "").trim();
   const postal = String(formData.get("postal") ?? "").trim();
   const country = String(formData.get("country") ?? "").trim().toUpperCase();
 
-  if (
-    !email.includes("@") ||
-    !name ||
-    !line1 ||
-    !city ||
-    !postal ||
-    country.length !== 2
-  ) {
-    redirect("/shop/checkout?error=validation");
+  if (!email || !email.includes("@")) {
+    redirect("/shop/checkout?error=email");
+  }
+  if (!name || !line1 || !city || !postal || country.length !== 2) {
+    redirect("/shop/checkout?error=address");
   }
 
   const lines = await getCartLines();
@@ -145,7 +138,6 @@ export async function placeGuestOrder(formData: FormData): Promise<void> {
 
   revalidatePath("/shop/cart");
 
-  // WP-09: attempt Stripe Checkout when keys are present.
   if (isStripeConfigured()) {
     const checkout = await createCheckoutSessionForOrder({
       orderId: order.id,
@@ -175,4 +167,89 @@ export async function placeGuestOrder(formData: FormData): Promise<void> {
   }
 
   redirect(`/shop/order/${order.id}`);
+}
+
+/**
+ * Resume payment for an existing pending_payment order (order confirmation page).
+ * Creates a Stripe Checkout Session when keys are present; otherwise returns a
+ * clear error so production can ship without Stripe configured yet.
+ */
+export async function payPendingOrder(
+  orderId: string
+): Promise<ShopResult | void> {
+  if (!orderId) {
+    return { ok: false, error: "Missing order id." };
+  }
+
+  if (!isStripeConfigured()) {
+    return {
+      ok: false,
+      error:
+        "Card payment is not configured on this environment yet (missing Stripe keys). Your order is saved as pending payment.",
+    };
+  }
+
+  const supabase = createServiceClient();
+  const { data: order, error } = await supabase
+    .from("orders")
+    .select(
+      "id, status, customer_email, currency, shipping_cents, total_cents, order_items(product_name, quantity, unit_price_cents)"
+    )
+    .eq("id", orderId)
+    .maybeSingle();
+
+  if (error || !order) {
+    logger.error("shop.pay_order_not_found", { orderId }, error);
+    return { ok: false, error: "Order not found." };
+  }
+
+  if (order.status !== "pending_payment") {
+    return {
+      ok: false,
+      error: `This order cannot be paid (status: ${order.status}).`,
+    };
+  }
+
+  const items = (order.order_items ?? []) as Array<{
+    product_name: string;
+    quantity: number;
+    unit_price_cents: number;
+  }>;
+
+  if (items.length === 0) {
+    return { ok: false, error: "Order has no line items." };
+  }
+
+  const checkout = await createCheckoutSessionForOrder({
+    orderId: order.id,
+    customerEmail: order.customer_email,
+    currency: order.currency ?? "EUR",
+    shippingCents: order.shipping_cents ?? 0,
+    lines: items.map((i) => ({
+      product_name: i.product_name,
+      quantity: i.quantity,
+      unit_price_cents: i.unit_price_cents,
+    })),
+  });
+
+  if (checkout.ok && checkout.url && checkout.sessionId) {
+    await supabase
+      .from("orders")
+      .update({ stripe_checkout_session_id: checkout.sessionId })
+      .eq("id", order.id);
+
+    redirect(checkout.url);
+  }
+
+  logger.warn("shop.pay_stripe_session_failed", {
+    orderId: order.id,
+    error: checkout.ok ? "missing_url" : checkout.error,
+  });
+
+  return {
+    ok: false,
+    error: checkout.ok
+      ? "Could not start Stripe Checkout."
+      : checkout.error,
+  };
 }
