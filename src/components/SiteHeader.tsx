@@ -1,6 +1,6 @@
 /**
- * Public site header — fixed so nav stays available at all viewport sizes.
- * Frosted glass: translucent white + blur so brand colors show through.
+ * Public site header — fixed frosted glass so nav stays available while scrolling.
+ * Soft translucent fill + blur/saturate lets brand colors bleed through.
  */
 
 import Link from "next/link";
@@ -12,7 +12,7 @@ export async function SiteHeader() {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-border/40 bg-white/60 backdrop-blur-md supports-[backdrop-filter]:bg-white/50">
+      <header className="fixed inset-x-0 top-0 z-50 header-glass">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-3 sm:h-16 sm:px-6">
           <Link
             href="/"

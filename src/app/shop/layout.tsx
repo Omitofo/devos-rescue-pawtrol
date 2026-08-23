@@ -1,6 +1,6 @@
 /**
  * Shop shell — WP-08.
- * Fixed frosted header so nav stays available while scrolling.
+ * Fixed frosted-glass header.
  */
 
 import Link from "next/link";
@@ -16,7 +16,7 @@ export default async function ShopLayout({
 
   return (
     <div className="min-h-screen bg-transparent">
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-border/40 bg-white/60 backdrop-blur-md supports-[backdrop-filter]:bg-white/50">
+      <header className="fixed inset-x-0 top-0 z-50 header-glass">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 px-4 sm:h-16 sm:px-6">
           <div className="flex items-center gap-4">
             <Link href="/shop" className="font-semibold text-primary">
