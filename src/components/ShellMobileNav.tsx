@@ -1,6 +1,6 @@
 /**
- * Public header navigation — desktop links + mobile hamburger drawer.
- * Drawer uses solid white panel (not transparent) so content underneath never shows through.
+ * Hamburger nav for app shells (workspace / admin) on mobile.
+ * Solid white drawer — same pattern as public SiteHeaderNav.
  */
 
 "use client";
@@ -9,21 +9,18 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-export type HeaderUser = {
-  role: string | null | undefined;
-} | null;
-
-type Props = {
-  user: HeaderUser;
+export type ShellLink = {
+  href: string;
+  label: string;
 };
 
-const PUBLIC_LINKS = [
-  { href: "/", label: "Animals" },
-  { href: "/shop", label: "Shop" },
-  { href: "/contact", label: "Contact" },
-] as const;
+type Props = {
+  links: ShellLink[];
+  footer?: React.ReactNode;
+  status?: React.ReactNode;
+};
 
-export function SiteHeaderNav({ user }: Props) {
+export function ShellMobileNav({ links, footer, status }: Props) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -49,47 +46,25 @@ export function SiteHeaderNav({ user }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
-  const roleLinks: { href: string; label: string }[] = [];
-  if (user?.role === "org_user") {
-    roleLinks.push({ href: "/workspace", label: "Workspace" });
-  }
-  if (user?.role === "platform_admin" || user?.role === "platform_moderator") {
-    roleLinks.push({ href: "/admin", label: "Admin" });
-  }
-  if (!user) {
-    roleLinks.push({ href: "/auth/login", label: "Org sign in" });
-  }
-
-  const allLinks = [...PUBLIC_LINKS, ...roleLinks];
-
   return (
     <>
-      <nav className="hidden items-center gap-4 text-sm text-muted-foreground md:flex">
-        {PUBLIC_LINKS.map((l) => (
-          <Link key={l.href} href={l.href} className="hover:text-primary">
-            {l.label}
-          </Link>
-        ))}
-        {roleLinks.map((l) => (
-          <Link
-            key={l.href}
-            href={l.href}
-            className={
-              l.href === "/workspace" || l.href === "/admin"
-                ? "font-medium text-primary hover:underline"
-                : "hover:text-primary"
-            }
-          >
-            {l.label}
-          </Link>
-        ))}
-      </nav>
+      <div className="hidden items-center gap-3 md:flex">
+        <nav className="flex items-center gap-3 text-sm text-muted-foreground">
+          {links.map((l) => (
+            <Link key={l.href} href={l.href} className="hover:text-primary">
+              {l.label}
+            </Link>
+          ))}
+        </nav>
+        {status}
+        {footer}
+      </div>
 
       <button
         type="button"
         className="inline-flex h-10 w-10 items-center justify-center rounded-md text-primary hover:bg-muted md:hidden"
         aria-expanded={open}
-        aria-controls="mobile-nav"
+        aria-controls="shell-mobile-nav"
         aria-label={open ? "Close menu" : "Open menu"}
         onClick={() => setOpen((v) => !v)}
       >
@@ -115,7 +90,7 @@ export function SiteHeaderNav({ user }: Props) {
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-[100] md:hidden" id="mobile-nav">
+        <div className="fixed inset-0 z-[100] md:hidden" id="shell-mobile-nav">
           <button
             type="button"
             className="absolute inset-0 bg-black/50"
@@ -142,7 +117,7 @@ export function SiteHeaderNav({ user }: Props) {
               </button>
             </div>
             <nav className="flex flex-1 flex-col gap-1 overflow-y-auto bg-white p-3">
-              {allLinks.map((l) => (
+              {links.map((l) => (
                 <Link
                   key={l.href}
                   href={l.href}
@@ -152,7 +127,13 @@ export function SiteHeaderNav({ user }: Props) {
                   {l.label}
                 </Link>
               ))}
+              {status && (
+                <div className="mt-2 border-t border-border px-3 pt-3">{status}</div>
+              )}
             </nav>
+            {footer && (
+              <div className="border-t border-border bg-white p-4">{footer}</div>
+            )}
           </div>
         </div>
       )}

@@ -1,11 +1,12 @@
 /**
  * Admin Console shell — WP-07.
- * Requires platform_admin or platform_moderator.
+ * Desktop: inline nav. Mobile: hamburger (ShellMobileNav).
  */
 
 import Link from "next/link";
 import { requirePlatformStaff } from "@/lib/auth/session";
 import { signOut } from "@/lib/auth/actions";
+import { ShellMobileNav } from "@/components/ShellMobileNav";
 
 export default async function AdminLayout({
   children,
@@ -14,35 +15,37 @@ export default async function AdminLayout({
 }) {
   const user = await requirePlatformStaff();
 
+  const links = [
+    { href: "/admin", label: "Dashboard" },
+    { href: "/admin/orders", label: "Orders" },
+    { href: "/admin/organizations/new", label: "Provision" },
+    { href: "/", label: "Public site" },
+  ];
+
+  const signOutForm = (
+    <form action={signOut.bind(null, "/auth/admin/login")}>
+      <button
+        type="submit"
+        className="text-sm text-muted-foreground underline hover:text-primary"
+      >
+        Sign out
+      </button>
+    </form>
+  );
+
   return (
     <div className="min-h-screen bg-transparent">
-      <header className="border-b border-border/80 bg-surface/90 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-4">
-            <Link href="/admin" className="font-semibold text-primary">
-              Admin Console
-            </Link>
-            <nav className="flex items-center gap-3 text-sm text-muted-foreground">
-              <Link href="/admin/orders" className="hover:text-primary">
-                Orders
-              </Link>
-              <Link href="/admin/organizations/new" className="hover:text-primary">
-                Provision
-              </Link>
-              <Link href="/" className="hover:text-primary">
-                Public site
-              </Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-3 text-sm text-muted-foreground">
-            <span className="hidden sm:inline">
-              {user.email} {"\u00b7"} {user.role}
+      <header className="border-b border-border/80 bg-white/95 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <Link href="/admin" className="shrink-0 font-semibold text-primary">
+            Admin Console
+          </Link>
+
+          <div className="flex items-center gap-3">
+            <span className="hidden text-sm text-muted-foreground lg:inline">
+              {user.email}
             </span>
-            <form action={signOut.bind(null, "/auth/admin/login")}>
-              <button type="submit" className="underline">
-                Sign out
-              </button>
-            </form>
+            <ShellMobileNav links={links} footer={signOutForm} />
           </div>
         </div>
       </header>
