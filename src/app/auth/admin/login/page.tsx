@@ -1,8 +1,5 @@
 /**
  * Platform staff login — Email + password (WP-03).
- *
- * MFA should be enforced via Supabase Auth settings for these accounts.
- * Only users with role platform_admin or platform_moderator are accepted.
  */
 
 "use client";
@@ -57,7 +54,7 @@ export default function AdminLoginPage() {
             Admin sign in
           </h1>
           <p className="text-sm text-muted-foreground">
-            Platform staff only \u00b7 MFA recommended
+            Platform staff only - MFA recommended
           </p>
         </div>
 
@@ -89,7 +86,7 @@ export default function AdminLoginPage() {
             disabled={pending}
             className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
           >
-            {pending ? "Signing in\u2026" : "Sign in"}
+            {pending ? "Signing in..." : "Sign in"}
           </button>
         </form>
 

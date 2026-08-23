@@ -6,6 +6,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   requestOrgOtp,
@@ -68,14 +69,30 @@ export default function OrgLoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-6">
-      <div className="w-full max-w-sm space-y-6 rounded-xl border border-border bg-surface-elevated p-8 shadow-sm">
+    <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-4 sm:p-6">
+      <div className="w-full max-w-sm space-y-6 rounded-xl border border-border bg-surface-elevated p-6 shadow-sm sm:p-8">
+        <div className="flex items-center justify-between gap-2">
+          <Link
+            href="/"
+            className="text-sm text-muted-foreground transition hover:text-primary"
+          >
+            {("\u2190")} Back to site
+          </Link>
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="text-sm text-muted-foreground underline-offset-2 hover:text-primary hover:underline"
+          >
+            Previous page
+          </button>
+        </div>
+
         <div className="space-y-1 text-center">
           <h1 className="text-xl font-semibold tracking-tight text-primary">
             Organization sign in
           </h1>
           <p className="text-sm text-muted-foreground">
-            No public registration · admin-provisioned accounts only
+            No public registration - admin-provisioned accounts only
           </p>
         </div>
 
@@ -141,7 +158,7 @@ export default function OrgLoginPage() {
               disabled={pending}
               className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
             >
-              {pending ? "Signing in…" : "Sign in"}
+              {pending ? "Signing in..." : "Sign in"}
             </button>
           </form>
         ) : otpStep === "email" ? (
@@ -163,7 +180,7 @@ export default function OrgLoginPage() {
               disabled={pending}
               className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
             >
-              {pending ? "Sending…" : "Send code"}
+              {pending ? "Sending..." : "Send code"}
             </button>
           </form>
         ) : (
@@ -189,7 +206,7 @@ export default function OrgLoginPage() {
               disabled={pending}
               className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
             >
-              {pending ? "Verifying…" : "Verify & sign in"}
+              {pending ? "Verifying..." : "Verify & sign in"}
             </button>
             <button
               type="button"
