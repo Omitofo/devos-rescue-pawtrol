@@ -26,7 +26,7 @@ export default async function WorkspaceLayout({
   const status =
     remaining > 0 ? (
       <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-        Editing unlocked \u00b7 {Math.ceil(remaining / 60)}m
+        Editing unlocked {"\u00b7"} {Math.ceil(remaining / 60)}m
       </span>
     ) : (
       <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
