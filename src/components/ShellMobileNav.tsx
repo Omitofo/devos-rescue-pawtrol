@@ -1,11 +1,12 @@
 /**
  * Hamburger nav for app shells (workspace / admin) on mobile.
- * Solid white drawer — same pattern as public SiteHeaderNav.
+ * Drawer is portaled to document.body so header backdrop-filter cannot trap it.
  */
 
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -22,7 +23,12 @@ type Props = {
 
 export function ShellMobileNav({ links, footer, status }: Props) {
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     setOpen(false);
@@ -45,6 +51,64 @@ export function ShellMobileNav({ links, footer, status }: Props) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
+
+  const drawer =
+    open && mounted
+      ? createPortal(
+          <div
+            className="fixed inset-0 z-[200] md:hidden"
+            id="shell-mobile-nav"
+            role="dialog"
+            aria-modal="true"
+          >
+            <button
+              type="button"
+              className="absolute inset-0 bg-black/50"
+              aria-label="Close menu"
+              onClick={() => setOpen(false)}
+            />
+            <div className="absolute right-0 top-0 flex h-full w-[min(20rem,88vw)] flex-col bg-white shadow-2xl">
+              <div className="flex shrink-0 items-center justify-between border-b border-border bg-white px-4 py-3">
+                <span className="text-sm font-semibold text-primary">Menu</span>
+                <button
+                  type="button"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-md text-primary hover:bg-muted"
+                  aria-label="Close menu"
+                  onClick={() => setOpen(false)}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path
+                      d="M6 6l12 12M18 6L6 18"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <nav className="flex flex-1 flex-col gap-1 overflow-y-auto bg-white p-3">
+                {links.map((l) => (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    className="rounded-lg px-3 py-3 text-base font-medium text-primary hover:bg-muted"
+                    onClick={() => setOpen(false)}
+                  >
+                    {l.label}
+                  </Link>
+                ))}
+                {status && (
+                  <div className="mt-2 border-t border-border px-3 pt-3">{status}</div>
+                )}
+              </nav>
+              {footer && (
+                <div className="shrink-0 border-t border-border bg-white p-4">{footer}</div>
+              )}
+            </div>
+          </div>,
+          document.body
+        )
+      : null;
 
   return (
     <>
@@ -89,54 +153,7 @@ export function ShellMobileNav({ links, footer, status }: Props) {
         )}
       </button>
 
-      {open && (
-        <div className="fixed inset-0 z-[100] md:hidden" id="shell-mobile-nav">
-          <button
-            type="button"
-            className="absolute inset-0 bg-black/50"
-            aria-label="Close menu"
-            onClick={() => setOpen(false)}
-          />
-          <div className="absolute right-0 top-0 flex h-full w-[min(20rem,88vw)] flex-col bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-border bg-white px-4 py-3">
-              <span className="text-sm font-semibold text-primary">Menu</span>
-              <button
-                type="button"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-md text-primary hover:bg-muted"
-                aria-label="Close menu"
-                onClick={() => setOpen(false)}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path
-                    d="M6 6l12 12M18 6L6 18"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </button>
-            </div>
-            <nav className="flex flex-1 flex-col gap-1 overflow-y-auto bg-white p-3">
-              {links.map((l) => (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  className="rounded-lg px-3 py-3 text-base font-medium text-primary hover:bg-muted"
-                  onClick={() => setOpen(false)}
-                >
-                  {l.label}
-                </Link>
-              ))}
-              {status && (
-                <div className="mt-2 border-t border-border px-3 pt-3">{status}</div>
-              )}
-            </nav>
-            {footer && (
-              <div className="border-t border-border bg-white p-4">{footer}</div>
-            )}
-          </div>
-        </div>
-      )}
+      {drawer}
     </>
   );
 }
