@@ -5,12 +5,24 @@
 import Link from "next/link";
 import { provisionOrganization } from "@/lib/admin/provision";
 
-export default function NewOrganizationPage() {
+type SearchParams = Promise<{ error?: string }>;
+
+export default async function NewOrganizationPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const params = await searchParams;
+  const error = typeof params.error === "string" ? params.error : null;
+
   return (
     <div className="mx-auto max-w-xl space-y-6">
       <div>
-        <Link href="/admin" className="text-sm text-muted-foreground hover:text-primary">
-          ← Dashboard
+        <Link
+          href="/admin"
+          className="text-sm text-muted-foreground hover:text-primary"
+        >
+          {"\u2190"} Dashboard
         </Link>
         <h1 className="mt-2 text-2xl font-semibold text-primary">
           Provision organisation
@@ -20,6 +32,12 @@ export default function NewOrganizationPage() {
           complete before you activate an organisation.
         </p>
       </div>
+
+      {error && (
+        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </p>
+      )}
 
       <form action={provisionOrganization} className="space-y-5">
         <fieldset className="space-y-3">
@@ -47,7 +65,12 @@ export default function NewOrganizationPage() {
             </select>
           </label>
           <div className="grid grid-cols-2 gap-3">
-            <Field name="country_code" label="Country (ISO)" placeholder="ES" maxLength={2} />
+            <Field
+              name="country_code"
+              label="Country (ISO)"
+              placeholder="ES"
+              maxLength={2}
+            />
             <Field name="city" label="City" />
           </div>
           <Field name="public_email" label="Public email" type="email" />

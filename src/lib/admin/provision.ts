@@ -6,6 +6,9 @@
  * Only platform staff. Creates organization rows and optionally an org_user
  * Auth account (no self-registration). Service role is required for
  * auth.admin.createUser and stays server-only (NFR-02).
+ *
+ * Form action returns Promise<void>: errors redirect with ?error=, success
+ * redirects to the new organisation page.
  */
 
 import { revalidatePath } from "next/cache";
@@ -13,10 +16,6 @@ import { redirect } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
 import { requirePlatformStaff } from "@/lib/auth/session";
 import { logger } from "@/lib/logger";
-
-export type ProvisionResult =
-  | { ok: true; orgId: string; userId?: string }
-  | { ok: false; error: string };
 
 function slugify(input: string): string {
   return input
@@ -27,23 +26,31 @@ function slugify(input: string): string {
     .slice(0, 60);
 }
 
+function fail(message: string): never {
+  redirect(
+    `/admin/organizations/new?error=${encodeURIComponent(message)}`
+  );
+}
+
 export async function provisionOrganization(
   formData: FormData
-): Promise<ProvisionResult> {
+): Promise<void> {
   await requirePlatformStaff();
 
   const name = String(formData.get("name") ?? "").trim();
   const slugRaw = String(formData.get("slug") ?? "").trim();
   const slug = slugify(slugRaw || name);
   const status = String(formData.get("status") ?? "active");
-  const country_code = String(formData.get("country_code") ?? "")
-    .trim()
-    .toUpperCase() || null;
+  const country_code =
+    String(formData.get("country_code") ?? "").trim().toUpperCase() || null;
   const city = String(formData.get("city") ?? "").trim() || null;
-  const public_email = String(formData.get("public_email") ?? "").trim() || null;
-  const public_phone = String(formData.get("public_phone") ?? "").trim() || null;
+  const public_email =
+    String(formData.get("public_email") ?? "").trim() || null;
+  const public_phone =
+    String(formData.get("public_phone") ?? "").trim() || null;
   const cta_text = String(formData.get("cta_text") ?? "").trim() || null;
-  const description = String(formData.get("description") ?? "").trim() || null;
+  const description =
+    String(formData.get("description") ?? "").trim() || null;
 
   const createUser = formData.get("create_user") === "on";
   const userEmail = String(formData.get("user_email") ?? "")
@@ -54,15 +61,12 @@ export async function provisionOrganization(
     String(formData.get("user_display_name") ?? "").trim() || name;
 
   if (!name || !slug) {
-    return { ok: false, error: "Name and slug are required." };
+    fail("Name and slug are required.");
   }
 
   if (createUser) {
     if (!userEmail.includes("@") || userPassword.length < 8) {
-      return {
-        ok: false,
-        error: "Org user needs a valid email and password (min 8 characters).",
-      };
+      fail("Org user needs a valid email and password (min 8 characters).");
     }
   }
 
@@ -70,10 +74,10 @@ export async function provisionOrganization(
   try {
     supabase = createServiceClient();
   } catch {
-    return {
-      ok: false,
-      error: "SUPABASE_SERVICE_ROLE_KEY is required for provisioning.",
-    };
+    fail("SUPABASE_SERVICE_ROLE_KEY is required for provisioning.");
+  }
+  if (!supabase) {
+    fail("SUPABASE_SERVICE_ROLE_KEY is required for provisioning.");
   }
 
   const { data: org, error: orgError } = await supabase
@@ -100,10 +104,7 @@ export async function provisionOrganization(
 
   if (orgError || !org) {
     logger.error("admin.provision_org_failed", { slug }, orgError);
-    return {
-      ok: false,
-      error: orgError?.message ?? "Could not create organisation.",
-    };
+    fail(orgError?.message ?? "Could not create organisation.");
   }
 
   let userId: string | undefined;
@@ -125,11 +126,9 @@ export async function provisionOrganization(
 
     if (authError || !authData.user) {
       logger.error("admin.provision_user_failed", { userEmail }, authError);
-      // Org already created — surface partial success guidance
-      return {
-        ok: false,
-        error: `Organisation created (${org.id}) but user failed: ${authError?.message ?? "unknown"}. Create the user manually and set app_metadata.`,
-      };
+      fail(
+        `Organisation created (${org.id}) but user failed: ${authError?.message ?? "unknown"}. Create the user manually and set app_metadata.`
+      );
     }
 
     userId = authData.user.id;
@@ -144,10 +143,7 @@ export async function provisionOrganization(
 
     if (profileError) {
       logger.error("admin.provision_profile_failed", { userId }, profileError);
-      return {
-        ok: false,
-        error: `User created but profile failed: ${profileError.message}`,
-      };
+      fail(`User created but profile failed: ${profileError.message}`);
     }
   }
 
