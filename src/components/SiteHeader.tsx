@@ -4,7 +4,6 @@
 
 import Link from "next/link";
 import { getAuthUser } from "@/lib/auth/session";
-import { LOGO_WEBP_DATA_URL } from "@/lib/brand/assets";
 
 export async function SiteHeader() {
   const user = await getAuthUser();
@@ -16,14 +15,14 @@ export async function SiteHeader() {
           href="/"
           className="flex items-center gap-2.5 text-lg font-semibold tracking-tight text-primary"
         >
-          {/* Official paw + heart logo — left of wordmark */}
+          {/* Prefer static file so the official mark keeps correct aspect ratio */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={LOGO_WEBP_DATA_URL}
+            src="/brand/logo.webp"
             alt=""
-            width={36}
-            height={36}
-            className="h-9 w-9 shrink-0"
+            width={40}
+            height={40}
+            className="h-10 w-10 shrink-0 object-contain"
           />
           <span>Rescue Pawtrol</span>
         </Link>

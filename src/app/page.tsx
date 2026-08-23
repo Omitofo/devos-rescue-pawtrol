@@ -1,7 +1,7 @@
 /**
  * Public discovery home — WP-05 (J-01) + UI polish (hero).
  *
- * Layout: full-energy hero → filters → animal grid.
+ * Layout: energetic hero → filters → animal grid.
  * Zero account gate (NFR-04, NFR-08).
  */
 
@@ -11,7 +11,6 @@ import { AnimalCard } from "@/components/AnimalCard";
 import { AnimalFilters } from "@/components/AnimalFilters";
 import { listPublishedAnimals, type AnimalFilters as Filters } from "@/lib/data/animals";
 import { trackEvent } from "@/lib/analytics/track";
-import { HERO_ANIMALS_DATA_URL } from "@/lib/brand/assets";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -51,17 +50,31 @@ export default async function HomePage({
     <>
       <SiteHeader />
 
-      <section className="relative overflow-hidden border-b border-border bg-gradient-to-br from-amber-50 via-orange-50 to-violet-100">
+      {/* Hero — bold color shapes (reference energy) + collage */}
+      <section className="relative overflow-hidden border-b border-border bg-[#FFF8F0]">
+        {/* Color splashes — solid geometric energy */}
         <div
           aria-hidden
-          className="pointer-events-none absolute -left-20 top-0 h-72 w-72 rounded-full bg-orange-400/30 blur-3xl"
+          className="pointer-events-none absolute -left-24 -top-16 h-72 w-72 rounded-full bg-[#FF6B2C] opacity-90 sm:h-96 sm:w-96"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-16 bottom-0 h-80 w-80 rounded-full bg-violet-500/25 blur-3xl"
+          className="pointer-events-none absolute -right-8 top-8 h-64 w-64 rounded-[2.5rem] bg-[#7C3AED] opacity-90 sm:h-80 sm:w-80"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute bottom-0 right-1/4 h-40 w-56 rounded-t-[3rem] bg-[#22C55E] opacity-80"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute right-1/3 top-1/4 h-28 w-28 rounded-full bg-[#FBBF24] opacity-80"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute bottom-12 left-1/3 h-24 w-40 rounded-full bg-[#A78BFA] opacity-50 blur-2xl"
         />
 
-        <div className="relative mx-auto grid min-h-[28rem] max-w-6xl items-center gap-8 px-4 py-12 sm:min-h-[32rem] sm:px-6 sm:py-16 lg:min-h-[36rem] lg:grid-cols-2 lg:gap-10 lg:py-20">
+        <div className="relative mx-auto grid min-h-[28rem] max-w-6xl items-center gap-8 px-4 py-12 sm:min-h-[32rem] sm:px-6 sm:py-16 lg:min-h-[36rem] lg:grid-cols-2 lg:gap-12 lg:py-20">
           <div className="space-y-6">
             <h1 className="text-4xl font-bold leading-[1.08] tracking-tight text-primary sm:text-5xl lg:text-6xl">
               Rescue changes{" "}
@@ -69,34 +82,28 @@ export default async function HomePage({
                 everything
                 <span
                   aria-hidden
-                  className="absolute -right-6 -top-1 text-3xl text-violet-500 sm:text-4xl"
+                  className="absolute -right-7 -top-1 text-3xl text-[#7C3AED] sm:-right-8 sm:text-4xl"
                 >
-                  \u2665
+                  {"\u2665"}
                 </span>
               </span>
               .
             </h1>
             <p className="max-w-md text-base text-muted-foreground sm:text-lg">
               Real animals. Real stories. Real impact. Find your new best friend
-              from verified rescue organisations \u2014 no account needed.
+              from verified rescue organisations{" "}{"\u2014"} no account needed.
             </p>
             <div className="flex flex-wrap gap-3">
               <a
-                href="#animals"
+                href="#filters"
                 className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90"
               >
                 Find an animal
-                <span aria-hidden>\u2192</span>
+                <span aria-hidden>{"\u2192"}</span>
               </a>
               <Link
-                href="/contact"
-                className="inline-flex items-center rounded-full border border-border bg-surface px-5 py-2.5 text-sm font-medium text-primary transition hover:bg-muted"
-              >
-                Explore rescues
-              </Link>
-              <Link
                 href="/shop"
-                className="inline-flex items-center rounded-full px-5 py-2.5 text-sm font-medium text-violet-700 underline-offset-4 hover:underline"
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface/90 px-5 py-2.5 text-sm font-medium text-primary backdrop-blur-sm transition hover:bg-muted"
               >
                 Shop to help
               </Link>
@@ -107,7 +114,7 @@ export default async function HomePage({
             <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl shadow-xl ring-1 ring-black/5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={HERO_ANIMALS_DATA_URL}
+                src="/brand/hero-animals.jpg"
                 alt="Happy rescued dogs and cats"
                 className="h-full w-full object-cover object-center"
               />
@@ -116,14 +123,30 @@ export default async function HomePage({
         </div>
       </section>
 
-      <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-        <section className="mb-10" aria-label="Search and filters">
+      <main className="relative mx-auto max-w-6xl px-4 py-10 sm:px-6">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -left-20 top-24 h-48 w-48 rounded-full bg-[#FF6B2C]/10 blur-3xl"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-16 top-64 h-56 w-56 rounded-full bg-[#7C3AED]/10 blur-3xl"
+        />
+
+        <section
+          id="filters"
+          className="relative mb-10 scroll-mt-20"
+          aria-label="Search and filters"
+        >
           <AnimalFilters current={filters} />
         </section>
 
-        <section id="animals">
+        <section id="animals" className="relative scroll-mt-20">
           <h2 className="mb-4 text-xl font-semibold tracking-tight text-primary">
-            Animals looking for love
+            Animals looking for love{" "}
+            <span aria-hidden className="text-[#7C3AED]">
+              {"\u2665"}
+            </span>
           </h2>
           {animals.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border bg-surface-elevated px-6 py-16 text-center">

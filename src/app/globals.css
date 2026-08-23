@@ -4,10 +4,6 @@
  * All semantic colours and typography tokens live here as CSS custom properties.
  * Tailwind maps them in tailwind.config.ts so components can use utilities
  * (bg-surface, text-primary, etc.) while the actual values remain single-source.
- *
- * Full visual system (palette, geometric accents, photography treatment,
- * high-contrast type scale) will be realised in WP-15 against visual.md.
- * These placeholders are intentionally neutral so the foundation stays clean.
  */
 
 @tailwind base;
@@ -15,9 +11,6 @@
 @tailwind utilities;
 
 :root {
-  /* ------------------------------------------------------------------ */
-  /* Surface & text                                                     */
-  /* ------------------------------------------------------------------ */
   --color-surface: #ffffff;
   --color-surface-elevated: #f8fafc;
   --color-primary: #0f172a;
@@ -26,37 +19,20 @@
   --color-muted-foreground: #64748b;
   --color-border: #e2e8f0;
 
-  /* ------------------------------------------------------------------ */
-  /* Accent placeholders (to be replaced in WP-15)                      */
-  /* Playful / joyful / warm brand accents — geometric shapes later.    */
-  /* ------------------------------------------------------------------ */
-  --color-accent-1: #22c55e; /* green — temporary */
-  --color-accent-2: #3b82f6; /* blue  — temporary */
-  --color-accent-3: #f59e0b; /* amber — temporary */
+  /* Brand accents aligned with hero color shapes */
+  --color-accent-1: #22c55e;
+  --color-accent-2: #7c3aed;
+  --color-accent-3: #ff6b2c;
 
-  /* ------------------------------------------------------------------ */
-  /* Typography                                                         */
-  /* System fonts for now; custom faces arrive with visual system.      */
-  /* ------------------------------------------------------------------ */
   --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
   --font-display: var(--font-sans);
 }
 
-/* Dark mode placeholder — not required for MVP public surface, but
-   the variable structure is ready if we later add a preference. */
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Intentionally left as light defaults for now.
-       Public discovery is designed around light backgrounds + strong
-       animal photography (brief / visual direction). */
-  }
-}
-
-/* Base resets that Tailwind does not fully cover */
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
 }
 
 body {
