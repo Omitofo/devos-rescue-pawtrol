@@ -8,6 +8,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { adminPasswordLogin } from "@/lib/auth/actions";
 
@@ -33,14 +34,30 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-6">
-      <div className="w-full max-w-sm space-y-6 rounded-xl border border-border bg-surface-elevated p-8 shadow-sm">
+    <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-4 sm:p-6">
+      <div className="w-full max-w-sm space-y-6 rounded-xl border border-border bg-surface-elevated p-6 shadow-sm sm:p-8">
+        <div className="flex items-center justify-between gap-2">
+          <Link
+            href="/"
+            className="text-sm text-muted-foreground transition hover:text-primary"
+          >
+            {("\u2190")} Back to site
+          </Link>
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="text-sm text-muted-foreground underline-offset-2 hover:text-primary hover:underline"
+          >
+            Previous page
+          </button>
+        </div>
+
         <div className="space-y-1 text-center">
           <h1 className="text-xl font-semibold tracking-tight text-primary">
             Admin sign in
           </h1>
           <p className="text-sm text-muted-foreground">
-            Platform staff only · MFA recommended
+            Platform staff only \u00b7 MFA recommended
           </p>
         </div>
 
@@ -72,7 +89,7 @@ export default function AdminLoginPage() {
             disabled={pending}
             className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
           >
-            {pending ? "Signing in…" : "Sign in"}
+            {pending ? "Signing in\u2026" : "Sign in"}
           </button>
         </form>
 
