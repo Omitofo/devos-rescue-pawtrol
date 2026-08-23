@@ -15,8 +15,8 @@ export default async function AdminLayout({
   const user = await requirePlatformStaff();
 
   return (
-    <div className="min-h-screen bg-surface">
-      <header className="border-b border-border bg-surface-elevated">
+    <div className="min-h-screen bg-transparent">
+      <header className="border-b border-border/80 bg-surface/90 backdrop-blur-sm">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-4">
             <Link href="/admin" className="font-semibold text-primary">
@@ -36,7 +36,7 @@ export default async function AdminLayout({
           </div>
           <div className="flex items-center gap-3 text-sm text-muted-foreground">
             <span className="hidden sm:inline">
-              {user.email} · {user.role}
+              {user.email} \u00b7 {user.role}
             </span>
             <form action={signOut.bind(null, "/auth/admin/login")}>
               <button type="submit" className="underline">

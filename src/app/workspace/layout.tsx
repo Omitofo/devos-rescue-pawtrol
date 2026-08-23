@@ -16,12 +16,12 @@ export default async function WorkspaceLayout({
   const remaining = await elevatedRemainingSeconds();
 
   return (
-    <div className="min-h-screen bg-surface">
-      <header className="border-b border-border bg-surface-elevated">
+    <div className="min-h-screen bg-transparent">
+      <header className="border-b border-border/80 bg-surface/90 backdrop-blur-sm">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-4">
             <Link href="/workspace" className="font-semibold text-primary">
-              Org workspace
+              Workspace
             </Link>
             <Link
               href="/workspace/profile"
@@ -37,7 +37,7 @@ export default async function WorkspaceLayout({
             <span className="hidden sm:inline">{user.email}</span>
             {remaining > 0 ? (
               <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                Editing unlocked · {Math.ceil(remaining / 60)}m
+                Editing unlocked \u00b7 {Math.ceil(remaining / 60)}m
               </span>
             ) : (
               <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">

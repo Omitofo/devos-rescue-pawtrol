@@ -15,8 +15,8 @@ export default async function ShopLayout({
   const count = items.reduce((n, i) => n + i.quantity, 0);
 
   return (
-    <div className="min-h-screen bg-surface">
-      <header className="border-b border-border bg-surface-elevated">
+    <div className="min-h-screen bg-transparent">
+      <header className="border-b border-border/80 bg-surface/90 backdrop-blur-sm">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
           <div className="flex items-center gap-4">
             <Link href="/shop" className="font-semibold text-primary">
@@ -26,7 +26,7 @@ export default async function ShopLayout({
               href="/"
               className="text-sm text-muted-foreground hover:text-primary"
             >
-              ← Animals
+              \u2190 Animals
             </Link>
           </div>
           <Link
