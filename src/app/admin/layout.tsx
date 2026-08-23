@@ -1,6 +1,6 @@
 /**
  * Admin Console shell — WP-07.
- * Fixed header so nav stays available while scrolling.
+ * Fixed frosted header so nav stays available while scrolling.
  */
 
 import Link from "next/link";
@@ -35,7 +35,7 @@ export default async function AdminLayout({
 
   return (
     <div className="min-h-screen bg-transparent">
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-border/80 bg-white/95 backdrop-blur-sm">
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-border/40 bg-white/60 backdrop-blur-md supports-[backdrop-filter]:bg-white/50">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:h-[3.25rem] sm:px-6">
           <Link href="/admin" className="shrink-0 font-semibold text-primary">
             Admin Console
