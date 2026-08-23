@@ -15,10 +15,10 @@ export async function SiteHeader() {
           href="/"
           className="flex items-center gap-2.5 text-lg font-semibold tracking-tight text-primary"
         >
-          {/* Prefer static file so the official mark keeps correct aspect ratio */}
+          {/* Transparent PNG preferred; keep square box + object-contain */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/brand/logo.webp"
+            src="/brand/logo.png"
             alt=""
             width={40}
             height={40}
