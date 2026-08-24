@@ -52,11 +52,11 @@ export default async function AdminOrdersPage({
         <div>
           <h1 className="text-2xl font-semibold text-primary">Orders</h1>
           <p className="text-sm text-muted-foreground">
-            Guest shop orders \u00b7 payment and fulfilment status
+            Guest shop orders · payment and fulfilment status
           </p>
         </div>
         <Link href="/admin" className="text-sm text-muted-foreground underline">
-          \u2190 Dashboard
+          ← Dashboard
         </Link>
       </div>
 
@@ -83,7 +83,7 @@ export default async function AdminOrdersPage({
 
       {orders.length === 0 ? (
         <p className="rounded-xl border border-dashed border-border px-6 py-12 text-center text-sm text-muted-foreground">
-          No orders{status ? ` with status \u201c${status.replaceAll("_", " ")}\u201d` : ""}.
+          No orders{status ? ` with status “${status.replaceAll("_", " ”)}”` : ""}.
         </p>
       ) : (
         <div className="overflow-hidden rounded-xl border border-border">
@@ -106,7 +106,7 @@ export default async function AdminOrdersPage({
                   </td>
                   <td className="px-4 py-3">
                     <div className="font-medium text-primary">
-                      {o.customer_name ?? "\u2014"}
+                      {o.customer_name ?? "—"}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {o.customer_email}
@@ -122,8 +122,8 @@ export default async function AdminOrdersPage({
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">
                     {o.pod_provider
-                      ? `${o.pod_provider}${o.pod_status ? ` \u00b7 ${o.pod_status}` : ""}`
-                      : "\u2014"}
+                      ? `${o.pod_provider}${o.pod_status ? ` · ${o.pod_status}` : ""}`
+                      : "—"}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <Link

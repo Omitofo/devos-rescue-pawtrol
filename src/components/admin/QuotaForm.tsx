@@ -1,36 +1,51 @@
 "use client";
 
 /**
- * Admin quota editor — WP-13 surface for organization_quotas limits.
+ * Admin quota editor — full limit set (WP-13).
+ * Usage counters are read-only on the parent page; this form edits limits only.
  */
 
 import { useTransition } from "react";
-import { updateOrgQuotas } from "@/lib/admin/quota-actions";
+import { useRouter } from "next/navigation";
+import { updateOrgQuota, type OrgQuotaLimits } from "@/lib/admin/actions";
 
 export type QuotaFormValues = {
   max_active_animals: number;
-  max_storage_bytes: number;
   max_animal_cud_per_day: number;
   max_image_uploads_per_day: number;
   max_images_per_animal: number;
+  /** Displayed/edited in MB; converted to bytes on submit */
+  max_storage_mb: number;
 };
 
 export function QuotaForm({
   orgId,
-  initial,
+  values,
 }: {
   orgId: string;
-  initial: QuotaFormValues;
+  values: QuotaFormValues;
 }) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
 
   return (
     <form
       className="space-y-4"
-      action={(fd) => {
+      onSubmit={(e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        const limits: OrgQuotaLimits = {
+          max_active_animals: Number(fd.get("max_active_animals")),
+          max_animal_cud_per_day: Number(fd.get("max_animal_cud_per_day")),
+          max_image_uploads_per_day: Number(fd.get("max_image_uploads_per_day")),
+          max_images_per_animal: Number(fd.get("max_images_per_animal")),
+          max_storage_bytes: Math.round(
+            Number(fd.get("max_storage_mb")) * 1024 * 1024
+          ),
+        };
         startTransition(async () => {
-          const result = await updateOrgQuotas(orgId, fd);
-          if (result && !result.ok) alert(result.error);
+          await updateOrgQuota(orgId, limits);
+          router.refresh();
         });
       }}
     >
@@ -38,27 +53,33 @@ export function QuotaForm({
         <Field
           name="max_active_animals"
           label="Max active animals"
-          defaultValue={initial.max_active_animals}
+          defaultValue={values.max_active_animals}
+          min={1}
+        />
+        <Field
+          name="max_animal_cud_per_day"
+          label="Max animal edits / day (CUD)"
+          defaultValue={values.max_animal_cud_per_day}
+          min={1}
+        />
+        <Field
+          name="max_image_uploads_per_day"
+          label="Max image uploads / day"
+          defaultValue={values.max_image_uploads_per_day}
+          min={1}
+        />
+        <Field
+          name="max_images_per_animal"
+          label="Max images per animal"
+          defaultValue={values.max_images_per_animal}
+          min={1}
+          max={20}
         />
         <Field
           name="max_storage_mb"
           label="Max storage (MB)"
-          defaultValue={Math.round(initial.max_storage_bytes / (1024 * 1024))}
-        />
-        <Field
-          name="max_animal_cud_per_day"
-          label="Animal CUD / day"
-          defaultValue={initial.max_animal_cud_per_day}
-        />
-        <Field
-          name="max_image_uploads_per_day"
-          label="Image uploads / day"
-          defaultValue={initial.max_image_uploads_per_day}
-        />
-        <Field
-          name="max_images_per_animal"
-          label="Images per animal"
-          defaultValue={initial.max_images_per_animal}
+          defaultValue={values.max_storage_mb}
+          min={50}
         />
       </div>
       <button
@@ -76,20 +97,26 @@ function Field({
   name,
   label,
   defaultValue,
+  min,
+  max,
 }: {
   name: string;
   label: string;
   defaultValue: number;
+  min?: number;
+  max?: number;
 }) {
   return (
     <label className="block space-y-1 text-sm">
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      <span className="text-xs text-muted-foreground">{label}</span>
       <input
-        name={name}
         type="number"
-        min={0}
+        name={name}
+        min={min}
+        max={max}
         defaultValue={defaultValue}
-        className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
+        required
+        className="block w-full rounded-md border border-border bg-surface px-2 py-1.5 text-sm"
       />
     </label>
   );
