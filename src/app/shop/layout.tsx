@@ -1,5 +1,5 @@
 /**
- * Shop shell — content only; chrome lives in root SiteHeader.
+ * Shop shell — full-bleed capable; nested routes add their own max-width.
  */
 
 export default function ShopLayout({
@@ -7,7 +7,5 @@ export default function ShopLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">{children}</div>
-  );
+  return <>{children}</>;
 }
