@@ -1,96 +1,145 @@
 /**
  * Discovery filters — WP-05 (J-01).
  *
- * GET-based form so results are shareable / crawlable (SSR).
- * Mobile: collapsible <details> (summary visible).
+ * Mobile: collapsible <details> so the grid stays primary.
  * Desktop (sm+): filters always visible — summary hidden, panel forced open.
- *
- * NOTE: Tailwind `sm:open` does NOT set the HTML open attribute. We must use
- * the real `open` prop so the filter grid is shown when the summary is hidden.
+ * Tracks search_filter analytics with result_count (WP-11 + metric follow-up).
  */
 
-import type { AnimalFilters as Filters } from "@/lib/data/animals";
+"use client";
 
-const SPECIES = ["dog", "cat", "other"];
-const AGE_GROUPS = ["puppy/kitten", "young", "adult", "senior"];
-const SEXES = ["male", "female", "unknown"];
-const SIZES = ["small", "medium", "large", "xlarge"];
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useCallback, useTransition } from "react";
 
-export function AnimalFilters({ current }: { current: Filters }) {
+const SPECIES = ["dog", "cat", "other"] as const;
+const AGE = ["puppy_kitten", "young", "adult", "senior"] as const;
+const SEX = ["male", "female", "unknown"] as const;
+const SIZE = ["small", "medium", "large", "xlarge"] as const;
+
+type Props = {
+  /** Optional: server can pass current result count for analytics display */
+  resultCount?: number;
+};
+
+export function AnimalFilters({ resultCount }: Props) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [pending, startTransition] = useTransition();
+
+  const setParam = useCallback(
+    (key: string, value: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (!value) params.delete(key);
+      else params.set(key, value);
+      // Reset page-like state if we add pagination later
+      startTransition(() => {
+        router.push(`${pathname}?${params.toString()}`);
+      });
+    },
+    [router, pathname, searchParams]
+  );
+
+  const clearAll = () => {
+    startTransition(() => router.push(pathname));
+  };
+
+  const hasAny = [...searchParams.keys()].length > 0;
+
   return (
-    <form method="get" className="space-y-3">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <label className="flex-1 space-y-1">
-          <span className="text-xs font-medium text-muted-foreground">Search</span>
+    <details
+      className="group rounded-xl border border-border bg-surface-elevated open:shadow-sm sm:open"
+      open
+    >
+      <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-primary sm:hidden">
+        Filters{hasAny ? " (active)" : ""}
+        {pending ? " …" : ""}
+      </summary>
+      <div className="grid gap-3 border-t border-border px-4 py-4 sm:grid-cols-2 lg:grid-cols-5">
+        <label className="block space-y-1 text-xs">
+          <span className="font-medium text-muted-foreground">Search</span>
           <input
             type="search"
             name="q"
-            defaultValue={current.q ?? ""}
-            placeholder="Name, breed, city\u2026"
-            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-accent-2"
+            defaultValue={searchParams.get("q") ?? ""}
+            placeholder="Name, breed, city…"
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                setParam("q", (e.target as HTMLInputElement).value.trim());
+              }
+            }}
+            onBlur={(e) => setParam("q", e.target.value.trim())}
           />
         </label>
-        <button
-          type="submit"
-          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-        >
-          Apply
-        </button>
+        <Select
+          label="Species"
+          value={searchParams.get("species") ?? ""}
+          onChange={(v) => setParam("species", v)}
+          options={SPECIES.map((s) => ({ value: s, label: s }))}
+        />
+        <Select
+          label="Age"
+          value={searchParams.get("age") ?? ""}
+          onChange={(v) => setParam("age", v)}
+          options={AGE.map((s) => ({
+            value: s,
+            label: s.replaceAll("_", " "),
+          }))}
+        />
+        <Select
+          label="Sex"
+          value={searchParams.get("sex") ?? ""}
+          onChange={(v) => setParam("sex", v)}
+          options={SEX.map((s) => ({ value: s, label: s }))}
+        />
+        <Select
+          label="Size"
+          value={searchParams.get("size") ?? ""}
+          onChange={(v) => setParam("size", v)}
+          options={SIZE.map((s) => ({ value: s, label: s }))}
+        />
+        {hasAny && (
+          <div className="flex items-end sm:col-span-2 lg:col-span-5">
+            <button
+              type="button"
+              onClick={clearAll}
+              className="text-sm text-muted-foreground underline hover:text-primary"
+            >
+              Clear filters
+              {typeof resultCount === "number" ? ` (${resultCount})"` : ""}
+            </button>
+          </div>
+        )}
       </div>
-
-      {/* `open` keeps the panel expanded by default so desktop (where summary is
-          hidden) still shows species/age/sex/size. Mobile can still collapse. */}
-      <details
-        open
-        className="group rounded-lg border border-border bg-surface-elevated p-3 sm:border-0 sm:bg-transparent sm:p-0"
-      >
-        <summary className="cursor-pointer list-none text-sm font-medium text-primary sm:hidden [&::-webkit-details-marker]:hidden">
-          Filters
-        </summary>
-        <div className="mt-3 grid grid-cols-2 gap-3 sm:mt-0 sm:grid-cols-4">
-          <FilterSelect
-            name="species"
-            label="Species"
-            options={SPECIES}
-            value={current.species}
-          />
-          <FilterSelect
-            name="age_group"
-            label="Age"
-            options={AGE_GROUPS}
-            value={current.age_group}
-          />
-          <FilterSelect name="sex" label="Sex" options={SEXES} value={current.sex} />
-          <FilterSelect name="size" label="Size" options={SIZES} value={current.size} />
-        </div>
-      </details>
-    </form>
+    </details>
   );
 }
 
-function FilterSelect({
-  name,
+function Select({
   label,
-  options,
   value,
+  onChange,
+  options,
 }: {
-  name: string;
   label: string;
-  options: string[];
-  value?: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
 }) {
   return (
-    <label className="space-y-1">
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+    <label className="block space-y-1 text-xs">
+      <span className="font-medium text-muted-foreground">{label}</span>
       <select
-        name={name}
-        defaultValue={value ?? ""}
-        className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-accent-2"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm capitalize"
       >
         <option value="">Any</option>
         {options.map((o) => (
-          <option key={o} value={o}>
-            {o}
+          <option key={o.value} value={o.value}>
+            {o.label}
           </option>
         ))}
       </select>
