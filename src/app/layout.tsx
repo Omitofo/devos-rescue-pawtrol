@@ -4,7 +4,8 @@ import { BrandBackdrop } from "@/components/BrandBackdrop";
 import { SiteHeader } from "@/components/SiteHeader";
 
 /**
- * Root layout — universal header on every route.
+ * Root layout — fixed header; content uses pt so it clears the bar.
+ * Home hero pulls up with negative margin so color sits under the glass.
  */
 
 export const metadata: Metadata = {
@@ -27,7 +28,7 @@ export default function RootLayout({
         <BrandBackdrop />
         <div className="relative z-0 min-w-0">
           <SiteHeader />
-          {children}
+          <div className="pt-14 sm:pt-16">{children}</div>
         </div>
       </body>
     </html>
