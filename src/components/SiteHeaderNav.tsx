@@ -1,9 +1,7 @@
 /**
  * Header chrome — desktop 3-zone layout, mobile cart + hamburger.
  *
- * Left: brand (home)
- * Center: Shop · Contact · Workspace? · Admin?
- * Right: Cart · Sign in / Sign out
+ * Left: brand · Center: nav (normal weight, wider gaps) · Right: cart icon + CTA
  */
 
 "use client";
@@ -32,8 +30,37 @@ const CENTER_LINKS = [
 
 function linkClass(active: boolean) {
   return active
-    ? "font-semibold text-primary underline underline-offset-4"
-    : "font-semibold text-primary hover:underline hover:underline-offset-4";
+    ? "text-sm font-normal text-primary underline underline-offset-4"
+    : "text-sm font-normal text-primary hover:underline hover:underline-offset-4";
+}
+
+function CartIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+    >
+      <path
+        d="M6 6h15l-1.5 9h-12L6 6Z"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M6 6 5 3H2"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="9" cy="20" r="1.25" fill="currentColor" />
+      <circle cx="18" cy="20" r="1.25" fill="currentColor" />
+    </svg>
+  );
 }
 
 export function SiteHeaderNav({ user, cartCount, brand }: Props) {
@@ -81,7 +108,6 @@ export function SiteHeaderNav({ user, cartCount, brand }: Props) {
   ];
 
   const signOutTo = isStaff ? "/auth/admin/login" : "/auth/login";
-  const cartLabel = cartCount > 0 ? `Cart (${cartCount})` : "Cart";
   const cartActive =
     pathname === "/shop/cart" || pathname.startsWith("/shop/cart/");
 
@@ -102,7 +128,7 @@ export function SiteHeaderNav({ user, cartCount, brand }: Props) {
             />
             <div className="absolute right-0 top-0 flex h-full w-[min(20rem,88vw)] flex-col bg-white shadow-2xl">
               <div className="flex shrink-0 items-center justify-between border-b border-border bg-white px-4 py-3">
-                <span className="text-sm font-semibold text-primary">Menu</span>
+                <span className="text-sm font-medium text-primary">Menu</span>
                 <button
                   type="button"
                   className="inline-flex h-9 w-9 items-center justify-center rounded-md text-primary hover:bg-muted"
@@ -119,7 +145,7 @@ export function SiteHeaderNav({ user, cartCount, brand }: Props) {
                   <Link
                     key={l.href}
                     href={l.href}
-                    className="rounded-lg px-3 py-3 text-base font-semibold text-primary hover:bg-muted"
+                    className="rounded-lg px-3 py-3 text-base font-normal text-primary hover:bg-muted"
                     onClick={() => setOpen(false)}
                   >
                     {l.label}
@@ -127,31 +153,32 @@ export function SiteHeaderNav({ user, cartCount, brand }: Props) {
                 ))}
                 <Link
                   href="/shop/cart"
-                  className="rounded-lg px-3 py-3 text-base font-semibold text-primary hover:bg-muted"
+                  className="inline-flex items-center gap-2 rounded-lg px-3 py-3 text-base font-normal text-primary hover:bg-muted"
                   onClick={() => setOpen(false)}
                 >
-                  {cartLabel}
+                  <CartIcon />
+                  Cart{cartCount > 0 ? ` (${cartCount})` : ""}
                 </Link>
                 {!user && (
                   <Link
                     href="/auth/login"
-                    className="rounded-lg px-3 py-3 text-base font-semibold text-primary hover:bg-muted"
+                    className="mt-2 rounded-full bg-primary px-3 py-3 text-center text-base font-medium text-primary-foreground"
                     onClick={() => setOpen(false)}
                   >
                     Org sign in
                   </Link>
                 )}
                 {user && (
-                  <div className="mt-2 border-t border-border px-3 pt-3">
+                  <div className="mt-3 border-t border-border px-1 pt-3">
                     {user.email && (
-                      <p className="mb-2 truncate text-xs text-muted-foreground">
+                      <p className="mb-2 truncate px-2 text-xs text-muted-foreground">
                         {user.email}
                       </p>
                     )}
                     <form action={signOut.bind(null, signOutTo)}>
                       <button
                         type="submit"
-                        className="text-sm font-semibold text-primary underline"
+                        className="w-full rounded-full border border-primary px-3 py-2.5 text-sm font-medium text-primary"
                       >
                         Sign out
                       </button>
@@ -173,7 +200,7 @@ export function SiteHeaderNav({ user, cartCount, brand }: Props) {
         </div>
 
         <nav
-          className="pointer-events-none absolute inset-x-0 hidden items-center justify-center gap-6 md:flex lg:gap-8"
+          className="pointer-events-none absolute inset-x-0 hidden items-center justify-center gap-8 md:flex lg:gap-12"
           aria-label="Primary"
         >
           {centerLinks.map((l) => {
@@ -195,21 +222,41 @@ export function SiteHeaderNav({ user, cartCount, brand }: Props) {
         </nav>
 
         <div className="relative z-10 ml-auto flex items-center gap-3 sm:gap-4">
-          <div className="hidden items-center gap-4 md:flex">
-            <Link href="/shop/cart" className={linkClass(cartActive)}>
-              {cartLabel}
+          <div className="hidden items-center gap-3 md:flex sm:gap-4">
+            <Link
+              href="/shop/cart"
+              className={`inline-flex items-center gap-1.5 text-sm font-normal text-primary hover:opacity-80 ${
+                cartActive ? "underline underline-offset-4" : ""
+              }`}
+              aria-label={
+                cartCount > 0 ? `Cart, ${cartCount} items` : "Cart"
+              }
+            >
+              <CartIcon />
+              <span className="hidden sm:inline">
+                Cart{cartCount > 0 ? ` (${cartCount})` : ""}
+              </span>
+              {cartCount > 0 && (
+                <span className="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-medium leading-5 text-primary-foreground sm:hidden">
+                  {cartCount}
+                </span>
+              )}
             </Link>
+
             {!user && (
               <Link
                 href="/auth/login"
-                className={linkClass(pathname.startsWith("/auth"))}
+                className="inline-flex items-center rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90"
               >
                 Org sign in
               </Link>
             )}
             {user && (
               <form action={signOut.bind(null, signOutTo)}>
-                <button type="submit" className={linkClass(false)}>
+                <button
+                  type="submit"
+                  className="inline-flex items-center rounded-full border border-primary bg-transparent px-4 py-1.5 text-sm font-medium text-primary transition hover:bg-primary hover:text-primary-foreground"
+                >
                   Sign out
                 </button>
               </form>
@@ -219,9 +266,17 @@ export function SiteHeaderNav({ user, cartCount, brand }: Props) {
           <div className="flex items-center gap-1 md:hidden">
             <Link
               href="/shop/cart"
-              className="rounded-md px-2 py-1.5 text-sm font-semibold text-primary hover:bg-muted"
+              className="relative inline-flex h-10 w-10 items-center justify-center rounded-md text-primary hover:bg-muted"
+              aria-label={
+                cartCount > 0 ? `Cart, ${cartCount} items` : "Cart"
+              }
             >
-              {cartLabel}
+              <CartIcon />
+              {cartCount > 0 && (
+                <span className="absolute right-1 top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground">
+                  {cartCount}
+                </span>
+              )}
             </Link>
             <button
               type="button"
