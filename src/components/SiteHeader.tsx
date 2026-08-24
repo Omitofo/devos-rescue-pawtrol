@@ -1,16 +1,29 @@
 /**
  * Universal app header — same chrome on discovery, shop, workspace, admin.
  *
+ * Mounted once from the root layout. If a page still renders <SiteHeader />,
+ * the second call in the same request is a no-op (React cache).
+ *
  * Left: logo + name → home (animals) + scroll top
- * Center/right: stable public links, cart always visible, role links
+ * Right: Shop, Contact, Cart (always), role links, sign in/out
  */
 
+import { cache } from "react";
 import { getAuthUser } from "@/lib/auth/session";
 import { readCartItems } from "@/lib/shop/cart";
 import { SiteHeaderNav } from "@/components/SiteHeaderNav";
 import { HomeBrandLink } from "@/components/HomeBrandLink";
 
+/** Per-request guard so nested <SiteHeader /> does not double-render. */
+const headerMountState = cache(() => ({ mounted: false }));
+
 export async function SiteHeader() {
+  const state = headerMountState();
+  if (state.mounted) {
+    return null;
+  }
+  state.mounted = true;
+
   const user = await getAuthUser();
   let cartCount = 0;
   try {
