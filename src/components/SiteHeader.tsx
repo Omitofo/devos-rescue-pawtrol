@@ -1,14 +1,24 @@
 /**
- * Public site header — fixed frosted glass so nav stays available while scrolling.
- * Brand link always returns to home at the top of the page.
+ * Universal app header — same chrome on discovery, shop, workspace, admin.
+ *
+ * Left: logo + name → home (animals) + scroll top
+ * Center/right: stable public links, cart always visible, role links
  */
 
 import { getAuthUser } from "@/lib/auth/session";
+import { readCartItems } from "@/lib/shop/cart";
 import { SiteHeaderNav } from "@/components/SiteHeaderNav";
 import { HomeBrandLink } from "@/components/HomeBrandLink";
 
 export async function SiteHeader() {
   const user = await getAuthUser();
+  let cartCount = 0;
+  try {
+    const items = await readCartItems();
+    cartCount = items.reduce((n, i) => n + i.quantity, 0);
+  } catch {
+    cartCount = 0;
+  }
 
   return (
     <>
@@ -26,7 +36,14 @@ export async function SiteHeader() {
             <span className="truncate">Rescue Pawtrol</span>
           </HomeBrandLink>
 
-          <SiteHeaderNav user={user ? { role: user.role } : null} />
+          <SiteHeaderNav
+            user={
+              user
+                ? { role: user.role, email: user.email ?? null }
+                : null
+            }
+            cartCount={cartCount}
+          />
         </div>
       </header>
       <div className="h-14 shrink-0 sm:h-16" aria-hidden />

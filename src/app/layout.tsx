@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { BrandBackdrop } from "@/components/BrandBackdrop";
+import { SiteHeader } from "@/components/SiteHeader";
 
 /**
- * Root layout — WP-01 foundation + brand color backdrop.
+ * Root layout — universal header on every route.
  */
 
 export const metadata: Metadata = {
@@ -24,7 +25,10 @@ export default function RootLayout({
     <html lang="en">
       <body className="relative min-h-screen overflow-x-hidden antialiased">
         <BrandBackdrop />
-        <div className="relative z-0 min-w-0">{children}</div>
+        <div className="relative z-0 min-w-0">
+          <SiteHeader />
+          {children}
+        </div>
       </body>
     </html>
   );

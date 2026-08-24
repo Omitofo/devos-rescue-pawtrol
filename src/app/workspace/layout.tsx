@@ -1,68 +1,30 @@
 /**
- * Organization workspace shell — WP-06 + profile.
- * Fixed frosted-glass header.
+ * Organization workspace shell — auth gate only; chrome in root SiteHeader.
  */
 
-import Link from "next/link";
 import { requireOrgMember } from "@/lib/auth/session";
-import { signOut } from "@/lib/auth/actions";
 import { elevatedRemainingSeconds } from "@/lib/auth/elevated";
-import { ShellMobileNav } from "@/components/ShellMobileNav";
 
 export default async function WorkspaceLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const user = await requireOrgMember();
+  await requireOrgMember();
   const remaining = await elevatedRemainingSeconds();
 
-  const links = [
-    { href: "/workspace", label: "Animals" },
-    { href: "/workspace/profile", label: "Profile" },
-    { href: "/", label: "Public site" },
-  ];
-
-  const status =
-    remaining > 0 ? (
-      <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-        Editing unlocked · {Math.ceil(remaining / 60)}m
-      </span>
-    ) : (
-      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
-        View only
-      </span>
-    );
-
-  const signOutForm = (
-    <form action={signOut.bind(null, "/auth/login")}>
-      <button
-        type="submit"
-        className="text-sm text-muted-foreground underline hover:text-primary"
-      >
-        Sign out
-      </button>
-    </form>
-  );
-
   return (
-    <div className="min-h-screen bg-transparent">
-      <header className="fixed inset-x-0 top-0 z-50 header-glass">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-3 px-4 sm:h-[3.25rem] sm:px-6">
-          <Link href="/workspace" className="shrink-0 font-semibold text-primary">
-            Workspace
-          </Link>
-
-          <div className="flex items-center gap-3">
-            <span className="hidden text-sm text-muted-foreground lg:inline">
-              {user.email}
-            </span>
-            <ShellMobileNav links={links} status={status} footer={signOutForm} />
-          </div>
-        </div>
-      </header>
-      <div className="h-14 shrink-0 sm:h-[3.25rem]" aria-hidden />
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">{children}</div>
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+      {remaining > 0 ? (
+        <p className="mb-4 text-xs text-green-800">
+          Editing unlocked · {Math.ceil(remaining / 60)}m remaining
+        </p>
+      ) : (
+        <p className="mb-4 text-xs text-amber-900">
+          View only — unlock editing from the workspace when needed.
+        </p>
+      )}
+      {children}
     </div>
   );
 }
