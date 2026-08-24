@@ -42,18 +42,12 @@ export default async function ShopPage() {
               Show your support for rescues and help animals everywhere. Every
               purchase makes a difference. Guest checkout — no account needed.
             </p>
-            <div className="flex flex-wrap gap-3 pt-1">
+            <div className="pt-1">
               <a
                 href="#products"
-                className="inline-flex items-center justify-center rounded-full bg-[#FF6B2C] px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:opacity-90"
+                className="inline-flex h-9 items-center justify-center rounded-full bg-primary px-5 text-sm font-medium leading-none text-primary-foreground shadow-sm transition hover:opacity-90"
               >
-                Shop all
-              </a>
-              <a
-                href="#products"
-                className="inline-flex items-center justify-center rounded-full border border-border bg-white/90 px-5 py-2.5 text-sm font-medium text-primary shadow-sm transition hover:bg-white"
-              >
-                Browse merch
+                Browse all
               </a>
             </div>
           </div>
