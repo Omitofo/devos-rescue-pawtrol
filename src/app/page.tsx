@@ -79,7 +79,7 @@ export default async function HomePage({
             </h1>
             <p className="max-w-md text-sm leading-relaxed text-primary/80 sm:text-base sm:text-muted-foreground lg:text-lg">
               Real animals. Real stories. Real impact. Find your new best friend
-              from verified rescue organisations — no account needed.
+              from verified rescue organisations.
             </p>
             <div className="flex flex-wrap gap-3">
               <a
