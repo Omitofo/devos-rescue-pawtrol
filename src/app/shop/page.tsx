@@ -1,18 +1,14 @@
 /**
  * Shop catalogue — WP-08 (J-06).
  *
- * Hero inspired by merch landing mock: light band, color blobs, copy left,
- * product visual right. Compact height; image path easy to swap.
+ * Hero: light band, color blobs, copy left, product visual right.
+ * Image: public/brand/shop-hero.jpg
  */
 
 import Link from "next/link";
 import { listActiveProducts, formatMoney } from "@/lib/shop/products";
 
-/**
- * Preferred: public/brand/shop-hero.jpg (hoodie / merch lifestyle).
- * Temporary stand-in until that asset is added.
- */
-const SHOP_HERO_SRC = "/brand/hero-animals.jpg";
+const SHOP_HERO_SRC = "/brand/shop-hero.jpg";
 
 export default async function ShopPage() {
   const products = await listActiveProducts();
