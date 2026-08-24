@@ -65,7 +65,7 @@ export default async function HomePage({
           className="pointer-events-none absolute right-1/3 top-1/4 hidden h-28 w-28 rounded-full bg-[#FBBF24] opacity-80 sm:block"
         />
 
-        <div className="relative mx-auto grid max-w-6xl items-center gap-8 px-4 pb-10 pt-6 sm:min-h-[32rem] sm:px-6 sm:pb-16 sm:pt-10 lg:min-h-[36rem] lg:grid-cols-2 lg:gap-12 lg:pb-20 lg:pt-12">
+        <div className="relative mx-auto grid max-w-6xl items-center gap-8 px-4 pb-10 pt-14 sm:min-h-[32rem] sm:px-6 sm:pb-16 sm:pt-12 lg:min-h-[36rem] lg:grid-cols-2 lg:gap-12 lg:pb-20 lg:pt-14">
           <div className="relative z-10 space-y-5 rounded-2xl bg-white/90 p-5 shadow-sm ring-1 ring-black/5 backdrop-blur-sm sm:bg-transparent sm:p-0 sm:shadow-none sm:ring-0 sm:backdrop-blur-none">
             <h1 className="text-3xl font-bold leading-[1.15] tracking-tight text-primary sm:text-5xl lg:text-6xl">
               Rescue changes{" "}
