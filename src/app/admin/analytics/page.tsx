@@ -80,7 +80,7 @@ export default async function AdminAnalyticsPage({
             href="/admin"
             className="text-sm text-muted-foreground hover:text-primary"
           >
-            {"\u2190"} Dashboard
+            ← Dashboard
           </Link>
           <h1 className="mt-1 text-2xl font-semibold text-primary">Analytics</h1>
           <p className="text-sm text-muted-foreground">
@@ -114,7 +114,7 @@ export default async function AdminAnalyticsPage({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-lg font-semibold text-primary">Activity by day</h2>
           <span className="text-xs text-muted-foreground">
-            All event types \u00b7 last {days}d
+            All event types · last {days}d
           </span>
         </div>
         <AnalyticsDayChart days={daily} />
@@ -151,7 +151,7 @@ export default async function AdminAnalyticsPage({
         <h2 className="text-lg font-semibold text-primary">Filter usage</h2>
         <p className="text-sm text-muted-foreground">
           Discrete filters from discovery searches (species, age, sex, size,
-          country). Free-text queries counted only as &quot;text search&quot;.
+          country). Free-text queries counted only as "text search".
         </p>
         {filters.length === 0 ? (
           <p className="text-sm text-muted-foreground">
