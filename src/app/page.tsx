@@ -2,11 +2,10 @@
  * Public discovery home — WP-05 (J-01) + UI polish (hero).
  *
  * Layout: energetic hero → filters → animal grid.
- * Mobile: readable text panel over softer shapes; no horizontal overflow.
+ * Hero uses negative margin so cream/blobs sit under the fixed glass header.
  */
 
 import Link from "next/link";
-import { SiteHeader } from "@/components/SiteHeader";
 import { AnimalCard } from "@/components/AnimalCard";
 import { AnimalFilters } from "@/components/AnimalFilters";
 import { listPublishedAnimals, type AnimalFilters as Filters } from "@/lib/data/animals";
@@ -48,9 +47,7 @@ export default async function HomePage({
 
   return (
     <>
-      <SiteHeader />
-
-      <section className="relative overflow-hidden border-b border-border bg-[#FFF8F0]">
+      <section className="relative -mt-14 overflow-hidden border-b border-border bg-[#FFF8F0] sm:-mt-16">
         <div
           aria-hidden
           className="pointer-events-none absolute -left-20 -top-12 h-52 w-52 rounded-full bg-[#FF6B2C]/70 sm:-left-24 sm:-top-16 sm:h-96 sm:w-96 sm:opacity-90"
@@ -68,22 +65,21 @@ export default async function HomePage({
           className="pointer-events-none absolute right-1/3 top-1/4 hidden h-28 w-28 rounded-full bg-[#FBBF24] opacity-80 sm:block"
         />
 
-        <div className="relative mx-auto grid max-w-6xl items-center gap-8 px-4 py-10 sm:min-h-[32rem] sm:px-6 sm:py-16 lg:min-h-[36rem] lg:grid-cols-2 lg:gap-12 lg:py-20">
+        <div className="relative mx-auto grid max-w-6xl items-center gap-8 px-4 pb-10 pt-6 sm:min-h-[32rem] sm:px-6 sm:pb-16 sm:pt-10 lg:min-h-[36rem] lg:grid-cols-2 lg:gap-12 lg:pb-20 lg:pt-12">
           <div className="relative z-10 space-y-5 rounded-2xl bg-white/90 p-5 shadow-sm ring-1 ring-black/5 backdrop-blur-sm sm:bg-transparent sm:p-0 sm:shadow-none sm:ring-0 sm:backdrop-blur-none">
             <h1 className="text-3xl font-bold leading-[1.15] tracking-tight text-primary sm:text-5xl lg:text-6xl">
               Rescue changes{" "}
               <span className="whitespace-nowrap">
                 everything
                 <span aria-hidden className="ml-1 text-[#7C3AED]">
-                  {"\u2665"}
+                  ♥
                 </span>
               </span>
               .
             </h1>
             <p className="max-w-md text-sm leading-relaxed text-primary/80 sm:text-base sm:text-muted-foreground lg:text-lg">
               Real animals. Real stories. Real impact. Find your new best friend
-              from verified rescue organisations{" "}
-              {"\u2014"} no account needed.
+              from verified rescue organisations — no account needed.
             </p>
             <div className="flex flex-wrap gap-3">
               <a
@@ -91,7 +87,7 @@ export default async function HomePage({
                 className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90"
               >
                 Find an animal
-                <span aria-hidden>{"\u2192"}</span>
+                <span aria-hidden>→</span>
               </a>
               <Link
                 href="/shop"
@@ -128,35 +124,21 @@ export default async function HomePage({
           <h2 className="mb-4 text-xl font-semibold tracking-tight text-primary">
             Animals looking for love{" "}
             <span aria-hidden className="text-[#7C3AED]">
-              {"\u2665"}
+              ♥
             </span>
           </h2>
+
           {animals.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border bg-surface-elevated px-6 py-16 text-center">
-              <p className="text-base font-medium text-primary">
-                No animals match these filters
-              </p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Try clearing the search or selecting fewer filters.
-              </p>
-              <a
-                href="/"
-                className="mt-4 inline-block text-sm font-medium text-accent-2 underline"
-              >
-                Clear all filters
-              </a>
-            </div>
+            <p className="rounded-xl border border-dashed border-border px-6 py-12 text-center text-sm text-muted-foreground">
+              No animals match these filters. Try clearing search or changing
+              species / age.
+            </p>
           ) : (
-            <>
-              <p className="mb-4 text-sm text-muted-foreground">
-                {animals.length} animal{animals.length === 1 ? "" : "s"}
-              </p>
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {animals.map((animal) => (
-                  <AnimalCard key={animal.id} animal={animal} />
-                ))}
-              </div>
-            </>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {animals.map((a) => (
+                <AnimalCard key={a.id} animal={a} />
+              ))}
+            </div>
           )}
         </section>
       </main>
