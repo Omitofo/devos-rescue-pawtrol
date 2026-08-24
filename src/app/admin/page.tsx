@@ -182,9 +182,9 @@ export default async function AdminDashboardPage() {
                   className="rounded-lg border border-border px-4 py-2 text-muted-foreground"
                 >
                   <span className="font-mono text-xs">
-                    {ev.animal_id?.slice(0, 8)}\u2026
+                    {ev.animal_id?.slice(0, 8)}…
                   </span>
-                  {" \u00b7 "}
+                  {" · "}
                   {new Date(ev.created_at).toLocaleString()}
                 </li>
               ))}
