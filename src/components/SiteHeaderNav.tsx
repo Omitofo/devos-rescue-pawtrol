@@ -1,7 +1,7 @@
 /**
  * Header chrome — desktop 3-zone layout, mobile cart + hamburger.
  *
- * Left: brand · Center: nav (normal weight, wider gaps) · Right: cart icon + CTA
+ * Left: brand · Center: nav · Right: cart icon + CTA
  */
 
 "use client";
@@ -30,8 +30,8 @@ const CENTER_LINKS = [
 
 function linkClass(active: boolean) {
   return active
-    ? "text-sm font-normal text-primary underline underline-offset-4"
-    : "text-sm font-normal text-primary hover:underline hover:underline-offset-4";
+    ? "text-sm font-normal text-primary underline underline-offset-4 hover:font-semibold"
+    : "text-sm font-normal text-primary hover:font-semibold hover:underline hover:underline-offset-4";
 }
 
 function CartIcon({ className }: { className?: string }) {
@@ -162,7 +162,7 @@ export function SiteHeaderNav({ user, cartCount, brand }: Props) {
                 {!user && (
                   <Link
                     href="/auth/login"
-                    className="mt-2 rounded-full bg-primary px-3 py-3 text-center text-base font-medium text-primary-foreground"
+                    className="mt-2 inline-flex h-11 items-center justify-center rounded-full bg-primary px-3 text-center text-base font-medium leading-none text-primary-foreground"
                     onClick={() => setOpen(false)}
                   >
                     Org sign in
@@ -178,7 +178,7 @@ export function SiteHeaderNav({ user, cartCount, brand }: Props) {
                     <form action={signOut.bind(null, signOutTo)}>
                       <button
                         type="submit"
-                        className="w-full rounded-full border border-primary px-3 py-2.5 text-sm font-medium text-primary"
+                        className="inline-flex h-11 w-full items-center justify-center rounded-full border border-primary px-3 text-sm font-medium leading-none text-primary"
                       >
                         Sign out
                       </button>
@@ -225,19 +225,16 @@ export function SiteHeaderNav({ user, cartCount, brand }: Props) {
           <div className="hidden items-center gap-3 md:flex sm:gap-4">
             <Link
               href="/shop/cart"
-              className={`inline-flex items-center gap-1.5 text-sm font-normal text-primary hover:opacity-80 ${
-                cartActive ? "underline underline-offset-4" : ""
+              className={`relative inline-flex h-9 w-9 items-center justify-center rounded-md text-primary hover:bg-muted/60 ${
+                cartActive ? "ring-1 ring-primary/30" : ""
               }`}
               aria-label={
                 cartCount > 0 ? `Cart, ${cartCount} items` : "Cart"
               }
             >
               <CartIcon />
-              <span className="hidden sm:inline">
-                Cart{cartCount > 0 ? ` (${cartCount})` : ""}
-              </span>
               {cartCount > 0 && (
-                <span className="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-medium leading-5 text-primary-foreground sm:hidden">
+                <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium leading-none text-primary-foreground">
                   {cartCount}
                 </span>
               )}
@@ -246,7 +243,7 @@ export function SiteHeaderNav({ user, cartCount, brand }: Props) {
             {!user && (
               <Link
                 href="/auth/login"
-                className="inline-flex items-center rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90"
+                className="inline-flex h-9 items-center justify-center rounded-full bg-primary px-4 text-sm font-medium leading-none text-primary-foreground shadow-sm transition hover:opacity-90"
               >
                 Org sign in
               </Link>
@@ -255,7 +252,7 @@ export function SiteHeaderNav({ user, cartCount, brand }: Props) {
               <form action={signOut.bind(null, signOutTo)}>
                 <button
                   type="submit"
-                  className="inline-flex items-center rounded-full border border-primary bg-transparent px-4 py-1.5 text-sm font-medium text-primary transition hover:bg-primary hover:text-primary-foreground"
+                  className="inline-flex h-9 items-center justify-center rounded-full border border-primary bg-transparent px-4 text-sm font-medium leading-none text-primary transition hover:bg-primary hover:text-primary-foreground"
                 >
                   Sign out
                 </button>
@@ -273,7 +270,7 @@ export function SiteHeaderNav({ user, cartCount, brand }: Props) {
             >
               <CartIcon />
               {cartCount > 0 && (
-                <span className="absolute right-1 top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground">
+                <span className="absolute right-1 top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium leading-none text-primary-foreground">
                   {cartCount}
                 </span>
               )}
