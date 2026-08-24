@@ -3,12 +3,10 @@
  */
 
 import Link from "next/link";
-import { SiteHeader } from "@/components/SiteHeader";
 
 export default function NotFound() {
   return (
     <>
-      <SiteHeader />
       <main className="mx-auto flex max-w-6xl flex-col items-center px-4 py-24 text-center sm:px-6">
         <h1 className="text-2xl font-semibold text-primary">Not available</h1>
         <p className="mt-2 max-w-md text-muted-foreground">
