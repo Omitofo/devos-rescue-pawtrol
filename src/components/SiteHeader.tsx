@@ -1,6 +1,6 @@
 /**
- * Universal app header — fixed glass bar only (no flow spacer).
- * Page content clears the bar via root padding; home hero bleeds underneath.
+ * Universal app header — 3 zones on desktop:
+ * left brand (home) · center primary links · right cart + account
  */
 
 import { cache } from "react";
@@ -29,26 +29,23 @@ export async function SiteHeader() {
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 header-glass">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-3 sm:h-16 sm:px-6">
-        <HomeBrandLink className="flex min-w-0 items-center gap-2 text-base font-semibold tracking-tight text-primary sm:gap-2.5 sm:text-lg">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/brand/logo.png"
-            alt=""
-            width={40}
-            height={40}
-            className="h-8 w-8 shrink-0 object-contain sm:h-10 sm:w-10"
-          />
-          <span className="truncate">Rescue Pawtrol</span>
-        </HomeBrandLink>
-
-        <SiteHeaderNav
-          user={
-            user ? { role: user.role, email: user.email ?? null } : null
-          }
-          cartCount={cartCount}
-        />
-      </div>
+      <SiteHeaderNav
+        user={user ? { role: user.role, email: user.email ?? null } : null}
+        cartCount={cartCount}
+        brand={
+          <HomeBrandLink className="flex min-w-0 items-center gap-2 text-base font-semibold tracking-tight text-primary sm:gap-2.5 sm:text-lg">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/logo.png"
+              alt=""
+              width={40}
+              height={40}
+              className="h-8 w-8 shrink-0 object-contain sm:h-10 sm:w-10"
+            />
+            <span className="truncate">Rescue Pawtrol</span>
+          </HomeBrandLink>
+        }
+      />
     </header>
   );
 }
