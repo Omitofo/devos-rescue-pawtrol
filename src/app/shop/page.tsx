@@ -2,7 +2,7 @@
  * Shop catalogue — WP-08 (J-06).
  *
  * Hero inspired by merch landing mock: light band, color blobs, copy left,
- * product visual right. Image path is easy to swap when the real shot is ready.
+ * product visual right. Compact height; image path easy to swap.
  */
 
 import Link from "next/link";
@@ -22,11 +22,11 @@ export default async function ShopPage() {
       <section className="relative -mt-14 overflow-hidden bg-[#FFF8F0] sm:-mt-16">
         <div
           aria-hidden
-          className="pointer-events-none absolute -left-16 top-8 h-48 w-48 rounded-full bg-[#FF6B2C]/70 sm:-left-20 sm:h-72 sm:w-72"
+          className="pointer-events-none absolute -left-16 top-8 h-36 w-36 rounded-full bg-[#FF6B2C]/70 sm:-left-20 sm:h-52 sm:w-52"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-8 top-24 h-36 w-36 rounded-full bg-[#FBBF24]/80 sm:right-[28%] sm:top-16 sm:h-44 sm:w-44"
+          className="pointer-events-none absolute -right-8 top-24 h-28 w-28 rounded-full bg-[#FBBF24]/80 sm:right-[28%] sm:top-12 sm:h-36 sm:w-36"
         />
         <div
           aria-hidden
@@ -34,12 +34,12 @@ export default async function ShopPage() {
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-10 bottom-0 h-56 w-40 rounded-t-[3rem] bg-[#7C3AED]/55 sm:-right-6 sm:h-72 sm:w-52"
+          className="pointer-events-none absolute -right-10 bottom-0 h-40 w-32 rounded-t-[2.5rem] bg-[#7C3AED]/55 sm:-right-6 sm:h-52 sm:w-40"
         />
 
-        <div className="relative mx-auto grid max-w-6xl items-center gap-8 px-4 pb-12 pt-20 sm:px-6 sm:pb-16 sm:pt-24 lg:grid-cols-2 lg:gap-12 lg:pb-20 lg:pt-28">
-          <div className="relative z-10 space-y-5">
-            <h1 className="text-4xl font-bold leading-[1.1] tracking-tight text-primary sm:text-5xl lg:text-6xl">
+        <div className="relative mx-auto grid max-w-6xl items-center gap-6 px-4 pb-8 pt-16 sm:px-6 sm:pb-10 sm:pt-16 lg:grid-cols-2 lg:gap-8 lg:pb-12 lg:pt-20">
+          <div className="relative z-10 space-y-4">
+            <h1 className="text-3xl font-bold leading-[1.15] tracking-tight text-primary sm:text-4xl lg:text-5xl">
               Wear the mission
             </h1>
             <p className="max-w-md text-sm leading-relaxed text-primary/80 sm:text-base">
@@ -63,7 +63,7 @@ export default async function ShopPage() {
           </div>
 
           <div className="relative z-10 mx-auto w-full max-w-md lg:max-w-none">
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[1.75rem] bg-white shadow-xl ring-1 ring-black/5 sm:rounded-[2rem]">
+            <div className="relative aspect-[5/3] w-full max-h-56 overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-black/5 sm:max-h-64 sm:rounded-[1.5rem] lg:max-h-72">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={SHOP_HERO_SRC}
