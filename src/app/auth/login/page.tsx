@@ -4,6 +4,7 @@
  *
  * Layout: form left · emotional image right (desktop).
  * Image: public/brand/login-hero.jpg (dog + cat).
+ * Card sized to fit typical viewports without scrolling.
  */
 
 "use client";
@@ -74,9 +75,9 @@ export default function OrgLoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-stretch justify-center bg-[#FFF8F0] p-4 sm:p-6 lg:p-8">
-      <div className="mx-auto grid w-full max-w-5xl overflow-hidden rounded-2xl border border-border bg-surface-elevated shadow-sm lg:grid-cols-2">
-        <div className="flex flex-col justify-center space-y-6 p-6 sm:p-8 lg:p-10">
+    <main className="flex min-h-[100dvh] items-center justify-center bg-[#FFF8F0] p-3 sm:p-4">
+      <div className="mx-auto grid w-full max-w-3xl overflow-hidden rounded-2xl border border-border bg-surface-elevated shadow-sm lg:max-h-[min(32rem,calc(100dvh-2rem))] lg:grid-cols-2">
+        <div className="flex flex-col justify-center space-y-4 p-5 sm:p-6 lg:overflow-y-auto">
           <div>
             <Link
               href="/"
@@ -87,7 +88,7 @@ export default function OrgLoginPage() {
           </div>
 
           <div className="space-y-1">
-            <h1 className="text-xl font-semibold tracking-tight text-primary sm:text-2xl">
+            <h1 className="text-lg font-semibold tracking-tight text-primary sm:text-xl">
               Organization sign in
             </h1>
             <p className="text-sm text-muted-foreground">
@@ -129,7 +130,7 @@ export default function OrgLoginPage() {
           </div>
 
           {mode === "password" ? (
-            <form onSubmit={onPassword} className="space-y-4">
+            <form onSubmit={onPassword} className="space-y-3">
               <label className="block space-y-1.5">
                 <span className="text-sm font-medium text-primary">Email</span>
                 <input
@@ -162,7 +163,7 @@ export default function OrgLoginPage() {
               </button>
             </form>
           ) : otpStep === "email" ? (
-            <form onSubmit={onRequestCode} className="space-y-4">
+            <form onSubmit={onRequestCode} className="space-y-3">
               <label className="block space-y-1.5">
                 <span className="text-sm font-medium text-primary">Email</span>
                 <input
@@ -184,7 +185,7 @@ export default function OrgLoginPage() {
               </button>
             </form>
           ) : (
-            <form onSubmit={onVerifyOtp} className="space-y-4">
+            <form onSubmit={onVerifyOtp} className="space-y-3">
               <p className="text-sm text-muted-foreground">
                 Code sent to <strong className="text-primary">{email}</strong>
               </p>
@@ -237,7 +238,7 @@ export default function OrgLoginPage() {
           </p>
         </div>
 
-        <div className="relative hidden min-h-[22rem] bg-muted lg:block">
+        <div className="relative hidden bg-muted lg:block lg:min-h-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={LOGIN_HERO_SRC}
@@ -248,7 +249,7 @@ export default function OrgLoginPage() {
             className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent"
             aria-hidden
           />
-          <p className="absolute bottom-6 left-6 right-6 text-sm font-medium text-white drop-shadow">
+          <p className="absolute bottom-4 left-4 right-4 text-xs font-medium text-white drop-shadow sm:text-sm">
             Real animals. Real rescues. You&apos;re part of the mission.
           </p>
         </div>
