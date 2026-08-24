@@ -1,5 +1,5 @@
 /**
- * Platform staff login — Email + password (WP-03).
+ * Platform staff login - Email + password (WP-03).
  */
 
 "use client";
@@ -38,7 +38,7 @@ export default function AdminLoginPage() {
             href="/"
             className="text-sm text-muted-foreground transition hover:text-primary"
           >
-            ← Back to site
+            &larr; Back to site
           </Link>
           <button
             type="button"

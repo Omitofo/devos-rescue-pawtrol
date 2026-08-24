@@ -1,5 +1,5 @@
 /**
- * Admin org detail — status + full quotas (WP-07 + WP-13).
+ * Admin org detail - status + full quotas (WP-07 + WP-13).
  */
 
 import Link from "next/link";
@@ -21,11 +21,11 @@ export default async function AdminOrgPage({ params }: { params: Params }) {
     <div className="space-y-8">
       <div>
         <Link href="/admin" className="text-sm text-muted-foreground hover:text-primary">
-          ← Dashboard
+          &larr; Dashboard
         </Link>
         <h1 className="mt-2 text-2xl font-semibold text-primary">{org.name}</h1>
         <p className="text-sm text-muted-foreground">
-          /{org.slug} · {[org.city, org.country_code].filter(Boolean).join(", ")}
+          /{org.slug} &middot; {[org.city, org.country_code].filter(Boolean).join(", ")}
         </p>
       </div>
 
@@ -53,14 +53,14 @@ export default async function AdminOrgPage({ params }: { params: Params }) {
               </li>
               <li>
                 Animal CUD today: {quota.animal_cud_today ?? 0} /{" "}
-                {quota.max_animal_cud_per_day ?? "—"}
+                {quota.max_animal_cud_per_day ?? "-"}
               </li>
               <li>
                 Image uploads today: {quota.image_uploads_today ?? 0} /{" "}
-                {quota.max_image_uploads_per_day ?? "—"}
+                {quota.max_image_uploads_per_day ?? "-"}
               </li>
               <li>
-                Max images / animal: {quota.max_images_per_animal ?? "—"}
+                Max images / animal: {quota.max_images_per_animal ?? "-"}
               </li>
             </ul>
             <QuotaForm
@@ -84,10 +84,10 @@ export default async function AdminOrgPage({ params }: { params: Params }) {
       <section className="space-y-2 text-sm">
         <h2 className="font-semibold text-primary">Public contact</h2>
         <ul className="space-y-1 text-muted-foreground">
-          <li>Email: {org.public_email ?? "—"}</li>
-          <li>Phone: {org.public_phone ?? "—"}</li>
-          <li>Website: {org.website_url ?? "—"}</li>
-          <li>CTA: {org.cta_text ?? "—"}</li>
+          <li>Email: {org.public_email ?? "-"}</li>
+          <li>Phone: {org.public_phone ?? "-"}</li>
+          <li>Website: {org.website_url ?? "-"}</li>
+          <li>CTA: {org.cta_text ?? "-"}</li>
         </ul>
       </section>
     </div>

@@ -1,5 +1,5 @@
 /**
- * Shop shell — WP-08.
+ * Shop shell - WP-08.
  * Fixed frosted-glass header.
  */
 
@@ -26,7 +26,7 @@ export default async function ShopLayout({
               href="/"
               className="text-sm text-muted-foreground hover:text-primary"
             >
-              ← Animals
+              &larr; Animals
             </Link>
           </div>
           <Link
