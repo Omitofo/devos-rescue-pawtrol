@@ -26,7 +26,7 @@ export default async function ShopLayout({
               href="/"
               className="text-sm text-muted-foreground hover:text-primary"
             >
-              {"\u2190"} Animals
+              ← Animals
             </Link>
           </div>
           <Link
