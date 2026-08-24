@@ -83,7 +83,8 @@ export default async function AdminOrdersPage({
 
       {orders.length === 0 ? (
         <p className="rounded-xl border border-dashed border-border px-6 py-12 text-center text-sm text-muted-foreground">
-          No orders{status ? ` with status “${status.replaceAll("_", " ”)}”` : ""}.
+          No orders
+          {status ? ` with status "${status.replaceAll("_", " ")}"` : ""}.
         </p>
       ) : (
         <div className="overflow-hidden rounded-xl border border-border">
