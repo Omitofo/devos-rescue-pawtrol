@@ -33,20 +33,13 @@ export default function AdminLoginPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-4 sm:p-6">
       <div className="w-full max-w-sm space-y-6 rounded-xl border border-border bg-surface-elevated p-6 shadow-sm sm:p-8">
-        <div className="flex items-center justify-between gap-2">
+        <div>
           <Link
             href="/"
             className="text-sm text-muted-foreground transition hover:text-primary"
           >
             &larr; Back to site
           </Link>
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="text-sm text-muted-foreground underline-offset-2 hover:text-primary hover:underline"
-          >
-            Previous page
-          </button>
         </div>
 
         <div className="space-y-1 text-center">
