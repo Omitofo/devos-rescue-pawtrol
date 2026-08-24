@@ -71,20 +71,13 @@ export default function OrgLoginPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-4 sm:p-6">
       <div className="w-full max-w-sm space-y-6 rounded-xl border border-border bg-surface-elevated p-6 shadow-sm sm:p-8">
-        <div className="flex items-center justify-between gap-2">
+        <div>
           <Link
             href="/"
             className="text-sm text-muted-foreground transition hover:text-primary"
           >
-            {("\u2190")} Back to site
+            &larr; Back to site
           </Link>
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="text-sm text-muted-foreground underline-offset-2 hover:text-primary hover:underline"
-          >
-            Previous page
-          </button>
         </div>
 
         <div className="space-y-1 text-center">
@@ -125,7 +118,7 @@ export default function OrgLoginPage() {
                 : "text-muted-foreground"
             }`}
           >
-            One-time code
+            Email code
           </button>
         </div>
 
@@ -140,6 +133,7 @@ export default function OrgLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-accent-2"
+                placeholder="you@rescue.org"
               />
             </label>
             <label className="block space-y-1.5">
