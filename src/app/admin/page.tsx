@@ -13,14 +13,15 @@ import {
 } from "@/lib/data/admin";
 
 export default async function AdminDashboardPage() {
-  const [orgs, leads, interest, publishedCount, analytics, orderCounts] = await Promise.all([
-    listAllOrganizations(),
-    listLeads(10),
-    listRecentInterest(10),
-    countPublishedAnimals(),
-    getAnalyticsSummary(7),
-    countOrdersByStatus(),
-  ]);
+  const [orgs, leads, interest, publishedCount, analytics, orderCounts] =
+    await Promise.all([
+      listAllOrganizations(),
+      listLeads(10),
+      listRecentInterest(10),
+      countPublishedAnimals(),
+      getAnalyticsSummary(7),
+      countOrdersByStatus(),
+    ]);
   const paidOrders = orderCounts["paid"] ?? 0;
   const pendingOrders = orderCounts["pending_payment"] ?? 0;
 
@@ -34,6 +35,12 @@ export default async function AdminDashboardPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Link
+            href="/admin/analytics"
+            className="rounded-md border border-border px-4 py-2 text-sm font-medium text-primary"
+          >
+            Analytics
+          </Link>
           <Link
             href="/admin/orders"
             className="rounded-md border border-border px-4 py-2 text-sm font-medium text-primary"
@@ -61,9 +68,17 @@ export default async function AdminDashboardPage() {
       </div>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-primary">
-          Analytics (last 7 days)
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold text-primary">
+            Analytics (last 7 days)
+          </h2>
+          <Link
+            href="/admin/analytics"
+            className="text-sm text-accent-2 underline"
+          >
+            Full analytics
+          </Link>
+        </div>
         {analytics.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             No events yet. Views, searches, cart, and checkout will appear here.
@@ -76,7 +91,7 @@ export default async function AdminDashboardPage() {
                 className="rounded-xl border border-border bg-surface-elevated px-4 py-4"
               >
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {row.event_type.replaceAll("_", " ")}
+                  {row.event_type.replace(/_/g, " ")}
                 </p>
                 <p className="mt-1 text-2xl font-semibold text-primary">
                   {row.count}
@@ -89,35 +104,30 @@ export default async function AdminDashboardPage() {
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-primary">Organisations</h2>
-        <div className="overflow-hidden rounded-xl border border-border">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
+        <div className="overflow-x-auto rounded-xl border border-border">
+          <table className="w-full min-w-[28rem] text-left text-sm">
+            <thead className="border-b border-border bg-muted/40 text-xs uppercase text-muted-foreground">
               <tr>
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Location</th>
-                <th className="px-4 py-3"></th>
+                <th className="px-4 py-2 font-medium">Name</th>
+                <th className="px-4 py-2 font-medium">Status</th>
+                <th className="px-4 py-2 font-medium">Location</th>
               </tr>
             </thead>
             <tbody>
               {orgs.map((o) => (
-                <tr key={o.id} className="border-t border-border">
-                  <td className="px-4 py-3 font-medium">{o.name}</td>
-                  <td className="px-4 py-3">
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
-                      {o.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {[o.city, o.country_code].filter(Boolean).join(", ")}
-                  </td>
-                  <td className="px-4 py-3 text-right">
+                <tr key={o.id} className="border-b border-border/60">
+                  <td className="px-4 py-2">
                     <Link
                       href={`/admin/organizations/${o.id}`}
-                      className="text-accent-2 underline"
+                      className="font-medium text-primary hover:underline"
                     >
-                      Manage
+                      {o.name}
                     </Link>
+                  </td>
+                  <td className="px-4 py-2 text-muted-foreground">{o.status}</td>
+                  <td className="px-4 py-2 text-muted-foreground">
+                    {[o.city, o.country_code].filter(Boolean).join(", ") ||
+                      "—"}
                   </td>
                 </tr>
               ))}
@@ -142,11 +152,15 @@ export default async function AdminDashboardPage() {
                     <span className="font-medium">
                       {l.organization_name ?? l.name ?? l.email}
                     </span>
-                    <span className="text-xs text-muted-foreground">{l.status}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {l.status}
+                    </span>
                   </div>
                   <p className="text-muted-foreground">{l.email}</p>
                   {l.message && (
-                    <p className="mt-1 line-clamp-2 text-primary/80">{l.message}</p>
+                    <p className="mt-1 line-clamp-2 text-primary/80">
+                      {l.message}
+                    </p>
                   )}
                 </li>
               ))}
@@ -155,7 +169,9 @@ export default async function AdminDashboardPage() {
         </div>
 
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold text-primary">Recent interest CTAs</h2>
+          <h2 className="text-lg font-semibold text-primary">
+            Recent interest CTAs
+          </h2>
           {interest.length === 0 ? (
             <p className="text-sm text-muted-foreground">No interest events yet.</p>
           ) : (
@@ -166,7 +182,7 @@ export default async function AdminDashboardPage() {
                   className="rounded-lg border border-border px-4 py-2 text-muted-foreground"
                 >
                   <span className="font-mono text-xs">
-                    {ev.animal_id?.slice(0, 8)}…
+                    {ev.animal_id?.slice(0, 8)}\u2026
                   </span>
                   {" \u00b7 "}
                   {new Date(ev.created_at).toLocaleString()}
