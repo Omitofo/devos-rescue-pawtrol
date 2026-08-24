@@ -23,56 +23,58 @@ export default async function CheckoutPage() {
   const stripeReady = isStripeConfigured();
 
   return (
-    <div className="mx-auto max-w-lg space-y-6">
-      <div>
-        <Link
-          href="/shop/cart"
-          className="text-sm text-muted-foreground hover:text-primary"
-        >
-          ← Cart
-        </Link>
-        <h1 className="mt-2 text-2xl font-semibold text-primary">Checkout</h1>
-        <p className="text-sm text-muted-foreground">
-          Guest checkout — no account required.
-          {stripeReady
-            ? " After you submit, you will be redirected to Stripe to pay securely."
-            : " Stripe is not configured on this environment; the order will be recorded as pending payment."}
-        </p>
-      </div>
-
-      <div className="rounded-xl border border-border bg-surface-elevated p-4 text-sm">
-        <p>Subtotal {formatMoney(subtotal, currency)}</p>
-        <p className="text-muted-foreground">
-          Shipping {formatMoney(shipping, currency)}
-          {shipping === 0 ? " (free over \u20ac50)" : ""}
-        </p>
-        <p className="mt-2 font-semibold text-primary">
-          Total {formatMoney(total, currency)}
-        </p>
-      </div>
-
-      <form action={placeGuestOrder} className="space-y-4">
-        <Field name="email" label="Email" type="email" required />
-        <Field name="name" label="Full name" required />
-        <Field name="line1" label="Address" required />
-        <div className="grid grid-cols-2 gap-3">
-          <Field name="city" label="City" required />
-          <Field name="postal" label="Postal code" required />
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-lg space-y-6">
+        <div>
+          <Link
+            href="/shop/cart"
+            className="text-sm text-muted-foreground hover:text-primary"
+          >
+            &larr; Cart
+          </Link>
+          <h1 className="mt-2 text-2xl font-semibold text-primary">Checkout</h1>
+          <p className="text-sm text-muted-foreground">
+            Guest checkout — no account required.
+            {stripeReady
+              ? " After you submit, you will be redirected to Stripe to pay securely."
+              : " Stripe is not configured on this environment; the order will be recorded as pending payment."}
+          </p>
         </div>
-        <Field
-          name="country"
-          label="Country (ISO)"
-          placeholder="ES"
-          required
-          maxLength={2}
-        />
-        <button
-          type="submit"
-          className="w-full rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground"
-        >
-          {stripeReady ? "Continue to payment" : "Place order (pending payment)"}
-        </button>
-      </form>
+
+        <div className="rounded-xl border border-border bg-surface-elevated p-4 text-sm">
+          <p>Subtotal {formatMoney(subtotal, currency)}</p>
+          <p className="text-muted-foreground">
+            Shipping {formatMoney(shipping, currency)}
+            {shipping === 0 ? " (free over €50)" : ""}
+          </p>
+          <p className="mt-2 font-semibold text-primary">
+            Total {formatMoney(total, currency)}
+          </p>
+        </div>
+
+        <form action={placeGuestOrder} className="space-y-4">
+          <Field name="email" label="Email" type="email" required />
+          <Field name="name" label="Full name" required />
+          <Field name="line1" label="Address" required />
+          <div className="grid grid-cols-2 gap-3">
+            <Field name="city" label="City" required />
+            <Field name="postal" label="Postal code" required />
+          </div>
+          <Field
+            name="country"
+            label="Country (ISO)"
+            placeholder="ES"
+            required
+            maxLength={2}
+          />
+          <button
+            type="submit"
+            className="w-full rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground"
+          >
+            {stripeReady ? "Continue to payment" : "Place order (pending payment)"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
