@@ -3,6 +3,7 @@
  *
  * Desktop: Shop · Contact · Cart · (Workspace|Admin) · Sign in/out
  * Mobile: Cart always visible; hamburger for the rest (portaled drawer)
+ * All primary links use semibold text-primary for contrast on glass header.
  */
 
 "use client";
@@ -30,8 +31,8 @@ const PRIMARY_LINKS = [
 
 function linkClass(active: boolean) {
   return active
-    ? "font-medium text-primary"
-    : "text-muted-foreground hover:text-primary";
+    ? "font-semibold text-primary underline underline-offset-4"
+    : "font-semibold text-primary hover:underline hover:underline-offset-4";
 }
 
 export function SiteHeaderNav({ user, cartCount }: Props) {
@@ -113,7 +114,7 @@ export function SiteHeaderNav({ user, cartCount }: Props) {
                   <Link
                     key={l.href}
                     href={l.href}
-                    className="rounded-lg px-3 py-3 text-base font-medium text-primary hover:bg-muted"
+                    className="rounded-lg px-3 py-3 text-base font-semibold text-primary hover:bg-muted"
                     onClick={() => setOpen(false)}
                   >
                     {l.label}
@@ -121,7 +122,7 @@ export function SiteHeaderNav({ user, cartCount }: Props) {
                 ))}
                 <Link
                   href="/shop/cart"
-                  className="rounded-lg px-3 py-3 text-base font-medium text-primary hover:bg-muted"
+                  className="rounded-lg px-3 py-3 text-base font-semibold text-primary hover:bg-muted"
                   onClick={() => setOpen(false)}
                 >
                   {cartLabel}
@@ -130,7 +131,7 @@ export function SiteHeaderNav({ user, cartCount }: Props) {
                   <Link
                     key={l.href}
                     href={l.href}
-                    className="rounded-lg px-3 py-3 text-base font-medium text-primary hover:bg-muted"
+                    className="rounded-lg px-3 py-3 text-base font-semibold text-primary hover:bg-muted"
                     onClick={() => setOpen(false)}
                   >
                     {l.label}
@@ -139,7 +140,7 @@ export function SiteHeaderNav({ user, cartCount }: Props) {
                 {!user && (
                   <Link
                     href="/auth/login"
-                    className="rounded-lg px-3 py-3 text-base font-medium text-primary hover:bg-muted"
+                    className="rounded-lg px-3 py-3 text-base font-semibold text-primary hover:bg-muted"
                     onClick={() => setOpen(false)}
                   >
                     Org sign in
@@ -155,7 +156,7 @@ export function SiteHeaderNav({ user, cartCount }: Props) {
                     <form action={signOut.bind(null, signOutTo)}>
                       <button
                         type="submit"
-                        className="text-sm text-muted-foreground underline hover:text-primary"
+                        className="text-sm font-semibold text-primary underline"
                       >
                         Sign out
                       </button>
@@ -189,8 +190,10 @@ export function SiteHeaderNav({ user, cartCount }: Props) {
 
         <Link
           href="/shop/cart"
-          className={`font-medium ${
-            cartActive ? "text-primary" : "text-primary hover:underline"
+          className={`font-semibold ${
+            cartActive
+              ? "text-primary underline underline-offset-4"
+              : "text-primary hover:underline hover:underline-offset-4"
           }`}
         >
           {cartLabel}
@@ -208,8 +211,10 @@ export function SiteHeaderNav({ user, cartCount }: Props) {
               <Link
                 key={l.href}
                 href={l.href}
-                className={`font-medium ${
-                  active ? "text-primary" : "text-primary hover:underline"
+                className={`font-semibold ${
+                  active
+                    ? "text-primary underline underline-offset-4"
+                    : "text-primary hover:underline hover:underline-offset-4"
                 }`}
               >
                 {l.label}
@@ -219,7 +224,7 @@ export function SiteHeaderNav({ user, cartCount }: Props) {
           {!user && (
             <Link
               href="/auth/login"
-              className="text-muted-foreground hover:text-primary"
+              className="font-semibold text-primary hover:underline hover:underline-offset-4"
             >
               Org sign in
             </Link>
@@ -228,7 +233,7 @@ export function SiteHeaderNav({ user, cartCount }: Props) {
             <form action={signOut.bind(null, signOutTo)}>
               <button
                 type="submit"
-                className="text-muted-foreground hover:text-primary"
+                className="font-semibold text-primary hover:underline hover:underline-offset-4"
               >
                 Sign out
               </button>
@@ -240,7 +245,7 @@ export function SiteHeaderNav({ user, cartCount }: Props) {
       <div className="flex items-center gap-1 md:hidden">
         <Link
           href="/shop/cart"
-          className="rounded-md px-2 py-1.5 text-sm font-medium text-primary hover:bg-muted"
+          className="rounded-md px-2 py-1.5 text-sm font-semibold text-primary hover:bg-muted"
         >
           {cartLabel}
         </Link>
