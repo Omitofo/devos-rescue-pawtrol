@@ -38,7 +38,7 @@ export default function AdminLoginPage() {
             href="/"
             className="text-sm text-muted-foreground transition hover:text-primary"
           >
-            {("\u2190")} Back to site
+            ← Back to site
           </Link>
           <button
             type="button"
