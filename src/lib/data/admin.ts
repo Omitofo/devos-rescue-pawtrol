@@ -1,5 +1,5 @@
 /**
- * Admin Console data access — WP-07.
+ * Admin Console data access — WP-07 + analytics rankings.
  * Platform staff only (RLS: is_platform_admin).
  */
 
@@ -168,6 +168,196 @@ export async function getAnalyticsSummary(days = 7): Promise<AnalyticsSummary[]>
   return Array.from(counts.entries())
     .map(([event_type, count]) => ({ event_type, count }))
     .sort((a, b) => b.count - a.count);
+}
+
+/** Named entity ranking for admin analytics */
+export type AnalyticsTopItem = {
+  id: string;
+  label: string;
+  count: number;
+};
+
+export type AnalyticsDayBucket = {
+  day: string;
+  count: number;
+};
+
+export type AnalyticsFilterStat = {
+  key: string;
+  value: string;
+  count: number;
+};
+
+function sinceDays(days: number): string {
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+  return since.toISOString();
+}
+
+/**
+ * Top animals / orgs / products by event type (last N days).
+ * Joins names when possible; falls back to short id.
+ */
+export async function getTopByEvent(opts: {
+  eventType: string;
+  idField: "animal_id" | "org_id" | "product_id";
+  days?: number;
+  limit?: number;
+}): Promise<AnalyticsTopItem[]> {
+  const days = opts.days ?? 7;
+  const limit = opts.limit ?? 10;
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("analytics_events")
+    .select(opts.idField)
+    .eq("event_type", opts.eventType)
+    .gte("created_at", sinceDays(days))
+    .not(opts.idField, "is", null)
+    .limit(8000);
+
+  if (error || !data) {
+    console.error("getTopByEvent", opts.eventType, error?.message);
+    return [];
+  }
+
+  const counts = new Map<string, number>();
+  for (const row of data) {
+    const id = (row as Record<string, string | null>)[opts.idField];
+    if (!id) continue;
+    counts.set(id, (counts.get(id) ?? 0) + 1);
+  }
+
+  const ranked = Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit);
+
+  if (ranked.length === 0) return [];
+
+  const ids = ranked.map(([id]) => id);
+  const labels = new Map<string, string>();
+
+  if (opts.idField === "animal_id") {
+    const { data: animals } = await supabase
+      .from("animals")
+      .select("id, name")
+      .in("id", ids);
+    for (const a of animals ?? []) {
+      labels.set(a.id, a.name ?? a.id.slice(0, 8));
+    }
+  } else if (opts.idField === "org_id") {
+    const { data: orgs } = await supabase
+      .from("organizations")
+      .select("id, name, slug")
+      .in("id", ids);
+    for (const o of orgs ?? []) {
+      labels.set(o.id, o.name ?? o.slug ?? o.id.slice(0, 8));
+    }
+  } else if (opts.idField === "product_id") {
+    const { data: products } = await supabase
+      .from("products")
+      .select("id, name")
+      .in("id", ids);
+    for (const p of products ?? []) {
+      labels.set(p.id, p.name ?? p.id.slice(0, 8));
+    }
+  }
+
+  return ranked.map(([id, count]) => ({
+    id,
+    label: labels.get(id) ?? `${id.slice(0, 8)}\u2026`,
+    count,
+  }));
+}
+
+/** Daily event totals for histogram (all types or one type). */
+export async function getDailyEventCounts(opts?: {
+  days?: number;
+  eventType?: string;
+}): Promise<AnalyticsDayBucket[]> {
+  const days = opts?.days ?? 30;
+  const supabase = await createClient();
+  let q = supabase
+    .from("analytics_events")
+    .select("created_at, event_type")
+    .gte("created_at", sinceDays(days))
+    .limit(10000);
+
+  if (opts?.eventType) {
+    q = q.eq("event_type", opts.eventType);
+  }
+
+  const { data, error } = await q;
+  if (error || !data) {
+    console.error("getDailyEventCounts", error?.message);
+    return [];
+  }
+
+  const buckets = new Map<string, number>();
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    buckets.set(key, 0);
+  }
+
+  for (const row of data) {
+    const key = String(row.created_at).slice(0, 10);
+    if (buckets.has(key)) {
+      buckets.set(key, (buckets.get(key) ?? 0) + 1);
+    }
+  }
+
+  return Array.from(buckets.entries()).map(([day, count]) => ({ day, count }));
+}
+
+/**
+ * Filter usage from search_filter metadata (discrete fields only).
+ */
+export async function getFilterUsageStats(
+  days = 30,
+  limit = 20
+): Promise<AnalyticsFilterStat[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("analytics_events")
+    .select("metadata")
+    .eq("event_type", "search_filter")
+    .gte("created_at", sinceDays(days))
+    .limit(5000);
+
+  if (error || !data) {
+    console.error("getFilterUsageStats", error?.message);
+    return [];
+  }
+
+  const counts = new Map<string, number>();
+  const discrete = ["species", "age_group", "sex", "size", "country"];
+
+  for (const row of data) {
+    const meta = (row.metadata ?? {}) as Record<string, unknown>;
+    for (const key of discrete) {
+      const val = meta[key];
+      if (val == null || val === "") continue;
+      const k = `${key}=${String(val)}`;
+      counts.set(k, (counts.get(k) ?? 0) + 1);
+    }
+    if (meta.q && String(meta.q).trim()) {
+      counts.set("q=(text search)", (counts.get("q=(text search)") ?? 0) + 1);
+    }
+  }
+
+  return Array.from(counts.entries())
+    .map(([combo, count]) => {
+      const eq = combo.indexOf("=");
+      return {
+        key: eq >= 0 ? combo.slice(0, eq) : combo,
+        value: eq >= 0 ? combo.slice(eq + 1) : "",
+        count,
+      };
+    })
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
 }
 
 /** Shop order row for admin list — ops visibility after WP-08/09 */
