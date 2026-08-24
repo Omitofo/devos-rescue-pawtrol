@@ -1,6 +1,9 @@
 /**
  * Organization user login — Email OTP or password (WP-03).
  * Password path unblocks local work when Supabase email is rate-limited.
+ *
+ * Layout: form left · emotional image right (desktop).
+ * Image: public/brand/login-hero.jpg (dog + cat).
  */
 
 "use client";
@@ -15,6 +18,8 @@ import {
 } from "@/lib/auth/actions";
 
 type Mode = "otp" | "password";
+
+const LOGIN_HERO_SRC = "/brand/login-hero.jpg";
 
 export default function OrgLoginPage() {
   const router = useRouter();
@@ -69,164 +74,184 @@ export default function OrgLoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-4 sm:p-6">
-      <div className="w-full max-w-sm space-y-6 rounded-xl border border-border bg-surface-elevated p-6 shadow-sm sm:p-8">
-        <div>
-          <Link
-            href="/"
-            className="text-sm text-muted-foreground transition hover:text-primary"
-          >
-            &larr; Back to site
-          </Link>
-        </div>
-
-        <div className="space-y-1 text-center">
-          <h1 className="text-xl font-semibold tracking-tight text-primary">
-            Organization sign in
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            No public registration - admin-provisioned accounts only
-          </p>
-        </div>
-
-        <div className="flex rounded-lg border border-border p-0.5 text-sm">
-          <button
-            type="button"
-            onClick={() => {
-              setMode("password");
-              setError(null);
-              setMessage(null);
-            }}
-            className={`flex-1 rounded-md px-3 py-1.5 ${
-              mode === "password"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground"
-            }`}
-          >
-            Password
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setMode("otp");
-              setError(null);
-              setMessage(null);
-            }}
-            className={`flex-1 rounded-md px-3 py-1.5 ${
-              mode === "otp"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground"
-            }`}
-          >
-            Email code
-          </button>
-        </div>
-
-        {mode === "password" ? (
-          <form onSubmit={onPassword} className="space-y-4">
-            <label className="block space-y-1.5">
-              <span className="text-sm font-medium text-primary">Email</span>
-              <input
-                type="email"
-                required
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-accent-2"
-                placeholder="you@rescue.org"
-              />
-            </label>
-            <label className="block space-y-1.5">
-              <span className="text-sm font-medium text-primary">Password</span>
-              <input
-                type="password"
-                required
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-accent-2"
-              />
-            </label>
-            <button
-              type="submit"
-              disabled={pending}
-              className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+    <main className="flex min-h-screen items-stretch justify-center bg-[#FFF8F0] p-4 sm:p-6 lg:p-8">
+      <div className="mx-auto grid w-full max-w-5xl overflow-hidden rounded-2xl border border-border bg-surface-elevated shadow-sm lg:grid-cols-2">
+        <div className="flex flex-col justify-center space-y-6 p-6 sm:p-8 lg:p-10">
+          <div>
+            <Link
+              href="/"
+              className="text-sm text-muted-foreground transition hover:text-primary"
             >
-              {pending ? "Signing in..." : "Sign in"}
-            </button>
-          </form>
-        ) : otpStep === "email" ? (
-          <form onSubmit={onRequestCode} className="space-y-4">
-            <label className="block space-y-1.5">
-              <span className="text-sm font-medium text-primary">Email</span>
-              <input
-                type="email"
-                required
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-accent-2"
-                placeholder="you@rescue.org"
-              />
-            </label>
-            <button
-              type="submit"
-              disabled={pending}
-              className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
-            >
-              {pending ? "Sending..." : "Send code"}
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={onVerifyOtp} className="space-y-4">
+              &larr; Back to site
+            </Link>
+          </div>
+
+          <div className="space-y-1">
+            <h1 className="text-xl font-semibold tracking-tight text-primary sm:text-2xl">
+              Organization sign in
+            </h1>
             <p className="text-sm text-muted-foreground">
-              Code sent to <strong className="text-primary">{email}</strong>
+              No public registration — admin-provisioned accounts only
             </p>
-            <label className="block space-y-1.5">
-              <span className="text-sm font-medium text-primary">One-time code</span>
-              <input
-                type="text"
-                required
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm tracking-widest outline-none focus:ring-2 focus:ring-accent-2"
-                placeholder="123456"
-              />
-            </label>
+          </div>
+
+          <div className="flex rounded-lg border border-border p-0.5 text-sm">
             <button
-              type="submit"
-              disabled={pending}
-              className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+              type="button"
+              onClick={() => {
+                setMode("password");
+                setError(null);
+                setMessage(null);
+              }}
+              className={`flex-1 rounded-md px-3 py-1.5 ${
+                mode === "password"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground"
+              }`}
             >
-              {pending ? "Verifying..." : "Verify & sign in"}
+              Password
             </button>
             <button
               type="button"
-              className="w-full text-sm text-muted-foreground underline"
               onClick={() => {
-                setOtpStep("email");
-                setCode("");
+                setMode("otp");
                 setError(null);
+                setMessage(null);
               }}
+              className={`flex-1 rounded-md px-3 py-1.5 ${
+                mode === "otp"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground"
+              }`}
             >
-              Use a different email
+              Email code
             </button>
-          </form>
-        )}
+          </div>
 
-        {message && (
-          <p className="text-center text-sm text-accent-1">{message}</p>
-        )}
-        {error && <p className="text-center text-sm text-red-600">{error}</p>}
+          {mode === "password" ? (
+            <form onSubmit={onPassword} className="space-y-4">
+              <label className="block space-y-1.5">
+                <span className="text-sm font-medium text-primary">Email</span>
+                <input
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-accent-2"
+                  placeholder="you@rescue.org"
+                />
+              </label>
+              <label className="block space-y-1.5">
+                <span className="text-sm font-medium text-primary">Password</span>
+                <input
+                  type="password"
+                  required
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-accent-2"
+                />
+              </label>
+              <button
+                type="submit"
+                disabled={pending}
+                className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+              >
+                {pending ? "Signing in..." : "Sign in"}
+              </button>
+            </form>
+          ) : otpStep === "email" ? (
+            <form onSubmit={onRequestCode} className="space-y-4">
+              <label className="block space-y-1.5">
+                <span className="text-sm font-medium text-primary">Email</span>
+                <input
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-accent-2"
+                  placeholder="you@rescue.org"
+                />
+              </label>
+              <button
+                type="submit"
+                disabled={pending}
+                className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+              >
+                {pending ? "Sending..." : "Send code"}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={onVerifyOtp} className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Code sent to <strong className="text-primary">{email}</strong>
+              </p>
+              <label className="block space-y-1.5">
+                <span className="text-sm font-medium text-primary">
+                  One-time code
+                </span>
+                <input
+                  type="text"
+                  required
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm tracking-widest outline-none focus:ring-2 focus:ring-accent-2"
+                  placeholder="123456"
+                />
+              </label>
+              <button
+                type="submit"
+                disabled={pending}
+                className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+              >
+                {pending ? "Verifying..." : "Verify & sign in"}
+              </button>
+              <button
+                type="button"
+                className="w-full text-sm text-muted-foreground underline"
+                onClick={() => {
+                  setOtpStep("email");
+                  setCode("");
+                  setError(null);
+                }}
+              >
+                Use a different email
+              </button>
+            </form>
+          )}
 
-        <p className="text-center text-xs text-muted-foreground">
-          Platform staff?{" "}
-          <a href="/auth/admin/login" className="underline">
-            Admin sign in
-          </a>
-        </p>
+          {message && (
+            <p className="text-center text-sm text-accent-1">{message}</p>
+          )}
+          {error && <p className="text-center text-sm text-red-600">{error}</p>}
+
+          <p className="text-center text-xs text-muted-foreground">
+            Platform staff?{" "}
+            <a href="/auth/admin/login" className="underline">
+              Admin sign in
+            </a>
+          </p>
+        </div>
+
+        <div className="relative hidden min-h-[22rem] bg-muted lg:block">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={LOGIN_HERO_SRC}
+            alt="Dog and cat — rescue companions"
+            className="absolute inset-0 h-full w-full object-cover object-center"
+          />
+          <div
+            className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent"
+            aria-hidden
+          />
+          <p className="absolute bottom-6 left-6 right-6 text-sm font-medium text-white drop-shadow">
+            Real animals. Real rescues. You&apos;re part of the mission.
+          </p>
+        </div>
       </div>
     </main>
   );
